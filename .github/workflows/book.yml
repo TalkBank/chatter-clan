@@ -1,0 +1,59 @@
+name: Book (GitHub Pages)
+
+# Build the chatter-clan mdBook and publish it to
+# https://talkbank.github.io/chatter-clan/.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'book/**'
+      - '.github/workflows/book.yml'
+  workflow_dispatch:
+
+# Least privilege at the top; the deploy job widens its own scope below.
+permissions:
+  contents: read
+
+# Pinned in lockstep with ci.yml.
+env:
+  MDBOOK_VERSION: '0.5.3'
+  MDBOOK_MERMAID_VERSION: '0.17.0'
+
+# One Pages deployment at a time; never cancel an in-progress publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: book-job
+      - name: Install mdbook + mdbook-mermaid
+        run: cargo install mdbook@"${MDBOOK_VERSION}" mdbook-mermaid@"${MDBOOK_MERMAID_VERSION}" --locked
+      - name: mdbook build
+        run: cd book && mdbook build
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: book/build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
