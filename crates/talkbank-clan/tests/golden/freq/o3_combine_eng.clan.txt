@@ -1,0 +1,21 @@
+  1 Triangle
+  1 and
+  1 angle
+  2 going
+  2 got
+  3 he
+  2 hill
+  2 kept
+  4 the
+  3 to
+  1 top
+  2 twirled
+  2 until
+  2 up
+------------------------------
+   14  Total number of different item types used
+   28  Total number of items (tokens)
+0.500  Type/Token ratio
+    This TTR number was not calculated on the basis of %mor line forms.
+    If you want a TTR based on lemmas, run FREQ on the %mor line
+    with option: +sm;*,o%

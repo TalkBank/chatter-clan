@@ -1,0 +1,22 @@
+# CLAN oracle pin for the committed golden files under tests/golden/.
+#
+# The *.clan.txt goldens in this tree are the byte-exact output of the CLAN
+# command-line tools, captured once from a local CLAN build and committed so
+# the parity tests run with no CLAN binary present (this repository stays
+# independent of the CLAN sources). The fail-closed verify path asserts
+# chatter's CLAN-format output equals these goldens; regeneration is a
+# deliberate, reviewed step (see the regen tooling), not part of CI.
+#
+# Canonical pin (the upstream identity these goldens were generated against).
+# `dali_bundle_last_modified` is stored verbatim in the bundle's HTTP
+# Last-Modified format so `just check-clan-freshness` can string-compare it
+# against a live `curl -sI` of the URL with no date parsing.
+dali_bundle_url           = https://dali.talkbank.org/clan/unix-clan.zip
+dali_bundle_last_modified = Fri, 01 May 2026 19:24:13 GMT
+dali_bundle_content_length = 21775045
+#
+# Local build reference (the TalkBank OSX-CLAN git layer over that bundle):
+osx_clan_dev_commit       = 7d15fcd
+#
+# When a newer bundle is published, re-sync, rebuild, regenerate the goldens,
+# review the diff, and update the two pin lines above in the same change.

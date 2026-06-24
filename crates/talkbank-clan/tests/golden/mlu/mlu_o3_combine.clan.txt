@@ -1,0 +1,5 @@
+MLU for Speaker: *COMBINED*
+  MLU (xxx, yyy and www are EXCLUDED from the utterance and morpheme counts):
+	Number of: utterances = 2, morphemes = 11
+	Ratio of morphemes over utterances = 5.500
+	Standard deviation = 0.500

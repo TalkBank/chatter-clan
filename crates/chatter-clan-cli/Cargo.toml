@@ -1,0 +1,30 @@
+[package]
+name = "chatter-clan"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Standalone CLI for the TalkBank CLAN analysis reimplementation"
+publish = false
+
+# The binary is `chatter-clan` (in the chatter monorepo this was the `chatter
+# clan` subcommand; extracted here it stands alone). The analysis engine lives in
+# the `talkbank-clan` library crate; this crate is only the CLI driver.
+[[bin]]
+name = "chatter-clan"
+path = "src/main.rs"
+
+[dependencies]
+talkbank-clan = { workspace = true }
+talkbank-model = { workspace = true }
+talkbank-transform = { workspace = true }
+clap = { workspace = true }
+chrono = { workspace = true }
+
+# Build script emits CLAN_BUILD_DATE (the CLAN banner's version-slot date).
+[build-dependencies]
+chrono = { workspace = true }

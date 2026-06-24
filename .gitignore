@@ -1,0 +1,6 @@
+# Rust build output
+/target
+**/target
+
+# mdBook build output (generated from book/src; never committed)
+book/build/

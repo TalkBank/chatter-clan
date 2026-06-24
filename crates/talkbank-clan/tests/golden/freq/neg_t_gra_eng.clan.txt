@@ -1,0 +1,66 @@
+Speaker: *SPE:
+  1 Triangle
+  1 adp|to
+  1 adp|up
+  1 and
+  1 cconj|and
+  2 det|the-Def-Art
+  1 going
+  1 got
+  2 he
+  1 hill
+  1 kept
+  1 noun|hill
+  1 noun|top
+  1 noun|triangle
+  2 pron|he-Prs-Nom-S3
+  1 sconj|until
+  2 the
+  1 to
+  1 top
+  1 twirled
+  1 until
+  1 up
+  1 verb|get-Fin-Ind-Past-S3-irr
+  1 verb|go-Ger-S
+  1 verb|keep-Fin-Ind-Past-S3-irr
+  1 verb|twirl-Fin-Ind-Past-S3
+------------------------------
+   26  Total number of different item types used
+   30  Total number of items (tokens)
+0.867  Type/Token ratio
+    This TTR number was not calculated on the basis of %mor line forms.
+    If you want a TTR based on lemmas, run FREQ on the %mor line
+    with option: +sm;*,o%
+
+Speaker: *GES:
+  1 adp|to
+  1 adp|up
+  1 angle
+  2 det|the-Def-Art
+  1 going
+  1 got
+  1 he
+  1 hill
+  1 kept
+  1 noun|angle
+  1 noun|hill-Acc
+  1 noun|to
+  1 pron|he-Prs-Nom-S3
+  1 sconj|until
+  2 the
+  2 to
+  1 twirled
+  1 until
+  1 up
+  1 verb|get-Fin-Ind-Past-S3-irr
+  1 verb|go-Ger-S
+  1 verb|keep-Part-Past-S-irr
+  1 verb|twirl-Fin-Ind-Past-S1
+------------------------------
+   23  Total number of different item types used
+   26  Total number of items (tokens)
+0.885  Type/Token ratio
+    This TTR number was not calculated on the basis of %mor line forms.
+    If you want a TTR based on lemmas, run FREQ on the %mor line
+    with option: +sm;*,o%

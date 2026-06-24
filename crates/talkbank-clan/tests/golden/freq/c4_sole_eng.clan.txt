@@ -1,0 +1,9 @@
+Speaker: *SPE:
+  1 Triangle kept going
+------------------------------
+    1  Total number of different item types used
+    1  Total number of items (tokens)
+1.000  Type/Token ratio
+    This TTR number was not calculated on the basis of %mor line forms.
+    If you want a TTR based on lemmas, run FREQ on the %mor line
+    with option: +sm;*,o%

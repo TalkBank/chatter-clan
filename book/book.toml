@@ -1,0 +1,21 @@
+[book]
+title = "chatter-clan: CLAN Command Reference"
+authors = ["TalkBank Contributors"]
+description = "User and developer documentation for chatter-clan, the dormant Rust reimplementation of CLAN's analysis commands over the chatter CHAT toolchain."
+language = "en"
+src = "src"
+
+[build]
+build-dir = "build"
+create-missing = false
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
+
+[output.html]
+git-repository-url = "https://github.com/TalkBank/chatter-clan"
+edit-url-template = "https://github.com/TalkBank/chatter-clan/edit/main/book/{path}"
+# Served from https://talkbank.github.io/chatter-clan/ when Pages is enabled;
+# site-url makes absolute in-book links resolve under the subpath.
+site-url = "/chatter-clan/"
+additional-js = ["mermaid.min.js", "mermaid-init.js"]

@@ -1,0 +1,56 @@
+[workspace]
+resolver = "2"
+members = ["crates/talkbank-clan", "crates/chatter-clan-cli"]
+
+# chatter-clan is the dormant, byte-for-byte CLAN reimplementation extracted
+# from the chatter repo on 2026-06-15 (halted: the project direction shifted to
+# web frontends on the real C CLAN). This workspace manifest exists ONLY to keep the
+# extracted `talkbank-clan` crate buildable so work can resume easily if the
+# decision is reversed; there is no active development here.
+#
+# The CHAT core (talkbank-model / talkbank-transform and their transitive crates)
+# lives in the public chatter repo and is consumed via git deps pinned to a
+# release tag, the same pattern talkbank-tools uses. Pinned to the current chatter
+# release (v0.2.0); bumping the pin is a deliberate step that may surface API drift
+# the halted clan code has not tracked (fixed in lockstep when bumped).
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["Franklin Chen <franklinchen@franklinchen.com>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/TalkBank/chatter-clan"
+homepage = "https://talkbank.org/"
+keywords = ["talkbank", "chat-format", "clan", "linguistics", "nlp"]
+categories = ["command-line-utilities", "text-processing"]
+
+[workspace.dependencies]
+# The standalone CLI driver (chatter-clan binary) consumes the analysis engine
+# from the sibling library crate, plus clap for argument parsing.
+talkbank-clan = { path = "crates/talkbank-clan" }
+clap = { version = "4.6", features = ["derive"] }
+chrono = "0.4"
+
+# crates.io dependencies the talkbank-clan crate uses.
+comrak = "0.52.0"
+indexmap = { version = "2.14", features = ["serde"] }
+insta = { version = "1.48", features = ["json", "yaml"] }
+quick-xml = "0.40"
+rand = "0.10"
+schemars = { version = "1.2", features = ["indexmap2", "smol_str03"] }
+serde = { version = "1.0", features = ["derive", "rc"] }
+serde_json = "1.0"
+smallvec = { version = "1.15", features = ["serde", "union", "const_generics"] }
+tempfile = "3.27"
+thiserror = "^2.0.18"
+tracing = "0.1"
+walkdir = "^2.5"
+
+# CHAT core consumed from the public chatter repo at the current release tag.
+# talkbank-transform transitively pulls talkbank-parser / talkbank-cache /
+# talkbank-derive / tree-sitter-talkbank from the same git source.
+talkbank-model = { git = "https://github.com/TalkBank/chatter", tag = "v0.2.0" }
+talkbank-transform = { git = "https://github.com/TalkBank/chatter", tag = "v0.2.0" }
+
+[profile.release]
+# Lean, mirrors chatter; this dormant repo is not performance-tuned.

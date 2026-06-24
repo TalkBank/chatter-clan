@@ -1,0 +1,23 @@
+Speaker: *SPE:
+  1 going
+  1 kept
+  2 the
+------------------------------
+    3  Total number of different item types used
+    4  Total number of items (tokens)
+0.750  Type/Token ratio
+    This TTR number was not calculated on the basis of %mor line forms.
+    If you want a TTR based on lemmas, run FREQ on the %mor line
+    with option: +sm;*,o%
+
+Speaker: *GES:
+  1 going
+  1 kept
+  2 the
+------------------------------
+    3  Total number of different item types used
+    4  Total number of items (tokens)
+0.750  Type/Token ratio
+    This TTR number was not calculated on the basis of %mor line forms.
+    If you want a TTR based on lemmas, run FREQ on the %mor line
+    with option: +sm;*,o%

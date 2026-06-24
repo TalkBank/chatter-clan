@@ -1,0 +1,8 @@
+# FREQ word-list fixture for the +s@F / -s@F (--include-word-file /
+# --exclude-word-file) golden. CLAN's rdexclf and chatter's
+# load_word_list_file both skip #-comments and blank lines, so this also
+# pins that the two parse the .cut file identically.
+
+kept
+the
+going

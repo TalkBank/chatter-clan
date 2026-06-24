@@ -1,0 +1,40 @@
+Speaker: *CHI:
+  3 I
+  1 an
+  1 ana
+  2 female
+  1 give
+  1 is
+  2 kitty
+  1 me
+  1 nice
+  2 that
+  1 the
+  2 want
+------------------------------
+   12  Total number of different item types used
+   18  Total number of items (tokens)
+0.667  Type/Token ratio
+    This TTR number was not calculated on the basis of %mor line forms.
+    If you want a TTR based on lemmas, run FREQ on the %mor line
+    with option: +sm;*,o%
+
+Speaker: *MOT:
+  1 book
+  1 cat
+  1 day
+  1 dog
+  1 here
+  1 in
+  1 is
+  2 later
+  1 magazine
+  1 ran
+  5 the
+------------------------------
+   11  Total number of different item types used
+   16  Total number of items (tokens)
+0.688  Type/Token ratio
+    This TTR number was not calculated on the basis of %mor line forms.
+    If you want a TTR based on lemmas, run FREQ on the %mor line
+    with option: +sm;*,o%

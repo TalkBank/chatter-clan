@@ -1,0 +1,5 @@
+MLU for Speaker: *CHI:
+  MLU (xxx, yyy and www are EXCLUDED from the utterance and morpheme counts):
+	Number of: utterances = 2, morphemes = 3
+	Ratio of morphemes over utterances = 1.500
+	Standard deviation = 0.500

@@ -1,0 +1,41 @@
+Speaker: *SPE:
+  1 twirled
+  1 and
+  2 he
+  2 the
+  1 Triangle
+  1 going
+  1 until
+  1 hill
+  1 to
+  1 top
+  1 up
+  1 got
+  1 kept
+------------------------------
+   13  Total number of different item types used
+   15  Total number of items (tokens)
+0.867  Type/Token ratio
+    This TTR number was not calculated on the basis of %mor line forms.
+    If you want a TTR based on lemmas, run FREQ on the %mor line
+    with option: +sm;*,o%
+
+Speaker: *GES:
+  1 twirled
+  1 he
+  2 the
+  1 angle
+  1 going
+  1 until
+  1 hill
+  2 to
+  1 up
+  1 got
+  1 kept
+------------------------------
+   11  Total number of different item types used
+   13  Total number of items (tokens)
+0.846  Type/Token ratio
+    This TTR number was not calculated on the basis of %mor line forms.
+    If you want a TTR based on lemmas, run FREQ on the %mor line
+    with option: +sm;*,o%

@@ -1,0 +1,9 @@
+Speaker: *SPE:
+------------------------------
+    0  Total number of different item types used
+    0  Total number of items (tokens)
+
+Speaker: *GES:
+------------------------------
+    0  Total number of different item types used
+    0  Total number of items (tokens)

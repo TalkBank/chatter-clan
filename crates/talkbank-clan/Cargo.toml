@@ -1,0 +1,51 @@
+[package]
+name = "talkbank-clan"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Rust reimplementation of CLAN analysis commands for TalkBank CHAT"
+readme = "README.md"
+# Hold back crates.io publication until the Wave 1B parity/support contract lands.
+publish = false
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+indexmap = { workspace = true }
+quick-xml = { workspace = true }
+rand = { workspace = true }
+schemars = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+smallvec = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+walkdir = { workspace = true }
+
+# TalkBank crates
+talkbank-model = { workspace = true }
+talkbank-transform = { workspace = true }
+
+[dev-dependencies]
+comrak = { workspace = true }
+insta = { workspace = true }
+smallvec = { workspace = true }
+tempfile = { workspace = true }
+
+# Panic-site audit completed 2026-04-29 (see
+# `docs/panic-audit/talkbank-clan.md`). Most sites are
+# `writeln!(...).unwrap()` to `String` (infallible), annotated at
+# the file level on each emitter / converter source.
+[lints.clippy]
+unwrap_used   = "deny"
+expect_used   = "deny"
+panic         = "deny"
+unreachable   = "deny"
+todo          = "deny"
+unimplemented = "deny"
