@@ -2537,8 +2537,8 @@ dependencies = [
 
 [[package]]
 name = "talkbank-cache"
-version = "0.2.0"
-source = "git+https://github.com/TalkBank/chatter?tag=v0.2.0#06381ddadfa7daa06cadda108ab2edfd3f516052"
+version = "0.2.1"
+source = "git+https://github.com/TalkBank/chatter?tag=v0.2.1#90b39e840007158584e18ec930738396b871868d"
 dependencies = [
  "blake3",
  "dirs",
@@ -2572,8 +2572,8 @@ dependencies = [
 
 [[package]]
 name = "talkbank-derive"
-version = "0.2.0"
-source = "git+https://github.com/TalkBank/chatter?tag=v0.2.0#06381ddadfa7daa06cadda108ab2edfd3f516052"
+version = "0.2.1"
+source = "git+https://github.com/TalkBank/chatter?tag=v0.2.1#90b39e840007158584e18ec930738396b871868d"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2582,8 +2582,8 @@ dependencies = [
 
 [[package]]
 name = "talkbank-model"
-version = "0.2.0"
-source = "git+https://github.com/TalkBank/chatter?tag=v0.2.0#06381ddadfa7daa06cadda108ab2edfd3f516052"
+version = "0.2.1"
+source = "git+https://github.com/TalkBank/chatter?tag=v0.2.1#90b39e840007158584e18ec930738396b871868d"
 dependencies = [
  "dashmap",
  "indexmap",
@@ -2604,8 +2604,8 @@ dependencies = [
 
 [[package]]
 name = "talkbank-parser"
-version = "0.2.0"
-source = "git+https://github.com/TalkBank/chatter?tag=v0.2.0#06381ddadfa7daa06cadda108ab2edfd3f516052"
+version = "0.2.1"
+source = "git+https://github.com/TalkBank/chatter?tag=v0.2.1#90b39e840007158584e18ec930738396b871868d"
 dependencies = [
  "indexmap",
  "smallvec",
@@ -2619,8 +2619,8 @@ dependencies = [
 
 [[package]]
 name = "talkbank-parser-re2c"
-version = "0.2.0"
-source = "git+https://github.com/TalkBank/chatter?tag=v0.2.0#06381ddadfa7daa06cadda108ab2edfd3f516052"
+version = "0.2.1"
+source = "git+https://github.com/TalkBank/chatter?tag=v0.2.1#90b39e840007158584e18ec930738396b871868d"
 dependencies = [
  "chumsky",
  "indexmap",
@@ -2637,8 +2637,8 @@ dependencies = [
 
 [[package]]
 name = "talkbank-transform"
-version = "0.2.0"
-source = "git+https://github.com/TalkBank/chatter?tag=v0.2.0#06381ddadfa7daa06cadda108ab2edfd3f516052"
+version = "0.2.1"
+source = "git+https://github.com/TalkBank/chatter?tag=v0.2.1#90b39e840007158584e18ec930738396b871868d"
 dependencies = [
  "chrono",
  "crossbeam-channel",
@@ -2907,7 +2907,7 @@ checksum = "009994f150cc0cd50ff54917d5bc8bffe8cad10ca10d81c34da2ec421ae61782"
 [[package]]
 name = "tree-sitter-talkbank"
 version = "0.1.0"
-source = "git+https://github.com/TalkBank/chatter?tag=v0.2.0#06381ddadfa7daa06cadda108ab2edfd3f516052"
+source = "git+https://github.com/TalkBank/chatter?tag=v0.2.1#90b39e840007158584e18ec930738396b871868d"
 dependencies = [
  "cc",
  "tree-sitter-language",

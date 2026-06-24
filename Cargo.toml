@@ -49,8 +49,8 @@ walkdir = "^2.5"
 # CHAT core consumed from the public chatter repo at the current release tag.
 # talkbank-transform transitively pulls talkbank-parser / talkbank-cache /
 # talkbank-derive / tree-sitter-talkbank from the same git source.
-talkbank-model = { git = "https://github.com/TalkBank/chatter", tag = "v0.2.0" }
-talkbank-transform = { git = "https://github.com/TalkBank/chatter", tag = "v0.2.0" }
+talkbank-model = { git = "https://github.com/TalkBank/chatter", tag = "v0.2.1" }
+talkbank-transform = { git = "https://github.com/TalkBank/chatter", tag = "v0.2.1" }
 
 [profile.release]
 # Lean, mirrors chatter; this dormant repo is not performance-tuned.

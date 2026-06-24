@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 **Status:** Dormant but buildable and resumable.
-**Last updated:** 2026-06-24 08:12 EDT
+**Last updated:** 2026-06-24 10:44 EDT
 
 Guidance for Claude Code when working in this repository
 (`TalkBank/chatter-clan`). Read this before making any change.
@@ -59,7 +59,7 @@ book/                      The clan-reference mdBook (parity status / roadmap /
 The CHAT core (`talkbank-model`, `talkbank-transform`, and their transitive
 crates) is **not vendored**. It is consumed from the public chatter repo via git
 dependencies pinned to a release tag in the root `Cargo.toml`
-(`[workspace.dependencies]`), currently `tag = "v0.2.0"`, the same pattern
+(`[workspace.dependencies]`), currently `tag = "v0.2.1"`, the same pattern
 talkbank-tools uses. `TalkBank/chatter` is public, so the fetch needs no auth.
 
 **Bumping the pin is a deliberate step.** A newer chatter tag can surface API

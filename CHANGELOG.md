@@ -25,7 +25,7 @@ can be resumed or forked. No releases have been cut yet.
 
 - The CHAT core (`talkbank-model`, `talkbank-transform`, and their transitive
   crates) is consumed from the public chatter repo via git dependencies pinned
-  to the `v0.2.0` tag (the `@ID`-corpus-required and Xphoint API changes were
+  to the `v0.2.1` tag (the `@ID`-corpus-required and Xphoint API changes were
   tracked when adopting it).
 
 [Unreleased]: https://github.com/TalkBank/chatter-clan/commits/main
