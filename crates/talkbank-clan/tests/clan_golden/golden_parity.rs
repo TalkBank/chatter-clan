@@ -19,7 +19,7 @@ use std::path::PathBuf;
 /// parity case marks every flag-row it `covers` as proven.
 #[allow(dead_code)]
 pub(crate) struct FlagRowRef {
-    /// Command page stem, e.g. "freq" -> book/src/clan-reference/commands/freq.md.
+    /// Command page stem, e.g. "freq" -> book/src/commands/freq.md.
     pub(crate) command: &'static str,
     /// The CLAN flag token exactly as it appears in the audit table's first
     /// backtick cell, e.g. "+t*X", "+c / +c0", "+d1". Bare invocation uses the

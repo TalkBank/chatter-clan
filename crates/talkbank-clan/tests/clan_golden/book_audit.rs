@@ -1,7 +1,7 @@
 // Parser for the per-command CLAN audit tables in the book, the DENOMINATOR
 // of the golden-parity completeness metric (Phase 2).
 //
-// Each `book/src/clan-reference/commands/<cmd>.md` page carries one or more
+// Each `book/src/commands/<cmd>.md` page carries one or more
 // flag tables with the header `| CLAN flag | Meaning | Chatter | Status |
 // Notes |`. This module parses those tables into typed `FlagRow`s. It uses the
 // comrak GFM parser rather than splitting on `|`, so cell markdown (the
@@ -180,7 +180,7 @@ fn book_audit_ignores_non_audit_tables() {
 
 #[test]
 fn book_audit_parses_real_freq_page_without_drift() {
-    let path = crate::common::workspace_root().join("book/src/clan-reference/commands/freq.md");
+    let path = crate::common::workspace_root().join("book/src/commands/freq.md");
     let md = std::fs::read_to_string(&path)
         .unwrap_or_else(|err| panic!("read {}: {err}", path.display()));
     let (rows, unrecognized) = parse_audit_rows_strict(&md);

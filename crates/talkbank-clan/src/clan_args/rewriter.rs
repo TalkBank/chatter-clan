@@ -62,7 +62,7 @@ pub(super) fn try_rewrite_clan_flag(
 
         // LAB2CHAT `+tN` (digit-only N) is "Movie segment start
         // time offset" per
-        // `book/src/clan-reference/commands/lab2chat.md:69`.
+        // `book/src/commands/lab2chat.md:69`.
         // chatter does not implement movie-segment offsets yet.
         // Without this arm, `+t3` falls through to
         // `rewrite_tier_speaker` and becomes `--speaker 3`
@@ -232,7 +232,7 @@ pub(super) fn try_rewrite_clan_flag(
         // MAXWD `+gN` (N in 1..=3) is the utterance-mode metric
         // selector ("find longest utterance instead of longest
         // word; N selects metric: 1=morph, 2=word, 3=char") per
-        // `book/src/clan-reference/commands/maxwd.md:52`. chatter
+        // `book/src/commands/maxwd.md:52`. chatter
         // does not implement utterance-mode yet. Without this
         // arm, the token falls through to `rewrite_gem` (next in
         // the chain) and becomes `--gem N`, silently mis-routing
@@ -245,7 +245,7 @@ pub(super) fn try_rewrite_clan_flag(
         // (string-oriented whole-tier / single-word search;
         // include tier code name in search) that chatter does not
         // yet implement, audit page status "Missing" per
-        // `book/src/clan-reference/commands/combo.md:51-52,56`.
+        // `book/src/commands/combo.md:51-52,56`.
         // Without these arms, the tokens fall through to the
         // generic `+g` → `rewrite_gem` arm below and silently
         // re-route to `--gem 1` / `--gem 2` / `--gem 6` (literal

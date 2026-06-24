@@ -35,7 +35,7 @@
 //!
 //! Command parity with upstream CLAN is still in progress. For the current
 //! audited status, see the CLAN parity status page:
-//! <https://github.com/TalkBank/chatter/blob/main/book/src/clan-reference/parity-status.md>
+//! <https://github.com/TalkBank/chatter/blob/main/book/src/parity-status.md>
 //!
 //! # Architecture
 //!

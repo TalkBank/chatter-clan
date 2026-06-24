@@ -480,7 +480,7 @@ fn maxwd_g3_passes_through_not_misrouted_to_gem() {
 }
 
 /// LAB2CHAT `+tN` is "Movie segment start time offset" per
-/// `book/src/clan-reference/commands/lab2chat.md:69`. chatter
+/// `book/src/commands/lab2chat.md:69`. chatter
 /// does not implement movie-segment offsets (audit page status
 /// "Missing"). Without a per-command arm, `+t3` falls through
 /// to `rewrite_tier_speaker` (default branch) and becomes

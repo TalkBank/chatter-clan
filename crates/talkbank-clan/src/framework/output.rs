@@ -113,7 +113,7 @@ pub trait CommandOutput: Serialize + std::fmt::Debug {
 /// startup (`FirstTime` branch) and once when the input is committed to a
 /// scratch file. chatter emits it once on every invocation; the
 /// duplication is a documented CLAN-bug divergence
-/// (`book/src/clan-reference/divergences/framework.md#clan-bug-divergences`,
+/// (`book/src/divergences/framework.md#clan-bug-divergences`,
 /// ledger row CLAN-DIV-001).
 pub fn format_clan_banner(
     invocation: &str,

@@ -104,10 +104,10 @@ fn compute_command_metric(
 
 /// Read a command's book page and compute its golden-parity metric.
 /// Centralizes the page path + read + parse shared by the metric tests and the
-/// block renderer; pages live at `book/src/clan-reference/commands/<page>`.
+/// block renderer; pages live at `book/src/commands/<page>`.
 fn load_command_metric(command: &'static str, page: &str, cases: &[&GoldenCase]) -> CommandMetric {
     let path = crate::common::workspace_root()
-        .join("book/src/clan-reference/commands")
+        .join("book/src/commands")
         .join(page);
     let md = std::fs::read_to_string(&path)
         .unwrap_or_else(|err| panic!("read {}: {err}", path.display()));
@@ -231,7 +231,7 @@ fn render_metric_table() -> String {
 /// asserts the committed block is current and fails RED if it has gone stale.
 #[test]
 fn golden_parity_metric_block_is_current() {
-    let path = crate::common::workspace_root().join("book/src/clan-reference/parity-status.md");
+    let path = crate::common::workspace_root().join("book/src/parity-status.md");
     let doc = std::fs::read_to_string(&path)
         .unwrap_or_else(|err| panic!("read {}: {err}", path.display()));
     let begin = doc
