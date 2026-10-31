@@ -29,7 +29,7 @@ batchalign3 morphotag corpus/  # emits %mor + %gra together
 
 ## Behavior
 
-Invoking `chatter clan megrasp` prints an error directing users to
+Invoking `chatter-clan megrasp` prints an error directing users to
 batchalign and exits with a non-zero status. No CHAT files are
 modified.
 

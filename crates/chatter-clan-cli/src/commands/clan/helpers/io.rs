@@ -6,7 +6,7 @@ pub(in super::super) fn run_normalize_alias(path: &Path, output: Option<&Path>) 
     let content = read_file_or_exit(path);
     let options = talkbank_model::ParseValidateOptions::default();
     match talkbank_transform::normalize_chat(&content, options) {
-        Ok(normalized) => write_output_or_exit(&normalized, output),
+        Ok(normalized) => write_output_or_exit(normalized.text(), output),
         Err(e) => exit_with_error(format!("Error: {e}")),
     }
 }

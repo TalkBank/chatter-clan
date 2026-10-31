@@ -14,9 +14,9 @@ anything else in the transcript.
 ## Usage
 
 ```bash
-chatter clan trim file.cha --exclude-tier mor
-chatter clan trim file.cha --exclude-tier '*'
-chatter clan trim file.cha --tier cod
+chatter-clan trim file.cha --exclude-tier mor
+chatter-clan trim file.cha --exclude-tier '*'
+chatter-clan trim file.cha --tier cod
 ```
 
 ## Options

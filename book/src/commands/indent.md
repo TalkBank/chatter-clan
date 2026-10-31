@@ -12,8 +12,8 @@ Aligns overlap markers in Conversation Analysis (CA) transcripts. The legacy man
 ## Usage
 
 ```bash
-chatter clan indent file.cha
-chatter clan indent file.cha -o aligned.cha
+chatter-clan indent file.cha
+chatter-clan indent file.cha -o aligned.cha
 ```
 
 ## CLAN `+`-flag coverage audit

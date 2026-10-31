@@ -1,7 +1,7 @@
 # FLO -- Simplified Fluent Output
 
 **Status:** Current
-**Last updated:** 2026-05-26 11:43 EDT
+**Last updated:** 2026-11-13
 
 ## Purpose
 
@@ -12,10 +12,14 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409312
 ## Usage
 
 ```bash
-chatter clan flo file.cha
+chatter-clan flo file.cha
 ```
 
 ## Options
+
+The upstream changelog dated October 30, 2026 adds `+d3` for LDC-formatted
+text output. This implementation has no `+d3` output mode. The CLI rejects
+the option invocation. Its default CHAT transform remains the supported path.
 
 This command has no command-specific flags beyond the shared
 `-o, --output <PATH>` (default: stdout). See
@@ -43,6 +47,7 @@ Sources: `OSX-CLAN/src/clan/flo.cpp::usage`,
 | `+d` | Replace main tier with simplified `%flo` in output |, | Missing | `OSX-CLAN/src/clan/flo.cpp:197`: bare `+d` (or `+d0`) sets `substitute_flag = 1` (flo line replaces main line). chatter emits `%flo:` as a new dependent tier alongside the original main tier, no substitute-flag consumer. Per-FLO rewriter arm in `clan_args.rs` passes the token through so clap reports the literal `+d` argument rather than the misleading `--display-mode` rewrite. |
 | `+d1` | FAVE-formatted output |, | Missing | Same `flo.cpp:197` switch sets `substitute_flag = 2`. Per-FLO rewriter arm passes the token through. |
 | `+d2` | AntConc-formatted `.txt` with BOM |, | Missing | Same `flo.cpp:197` switch, `+d2` is an empty branch (no `substitute_flag` change). Per-FLO rewriter arm passes the token through. |
+| `+d3` | LDC-formatted `.txt` |, | Missing | Added by upstream on 2026-10-30. No output mode is implemented here. |
 
 ### Audit summary
 
@@ -50,7 +55,7 @@ Sources: `OSX-CLAN/src/clan/flo.cpp::usage`,
 |---|---|
 | Done | 0 |
 | Partial | 0 |
-| Missing | 9 |
+| Missing | 10 |
 
 FLO has the **largest "Missing" bucket relative to surface size** of
 any audited command, the chatter implementation supports only the

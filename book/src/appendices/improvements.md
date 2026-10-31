@@ -4,7 +4,7 @@
 **Last updated:** 2026-05-30 18:59 EDT
 
 This document tracks every divergence between the original CLAN commands and
-the Rust `chatter clan` reimplementation. It covers CLI interface, output
+the Rust `chatter-clan` reimplementation. It covers CLI interface, output
 format, counting semantics, error handling, and intentional improvements.
 
 **Audience**: Researchers who have existing CLAN pipelines and need to know
@@ -29,7 +29,7 @@ Until then, this document serves as the authoritative migration reference.
 
 ## Philosophical Divergence
 
-The most fundamental difference between CLAN and `chatter clan` is not in
+The most fundamental difference between CLAN and `chatter-clan` is not in
 any individual command, but in the underlying approach to analysis.
 
 ### CLAN: String Matching Without a Data Model
@@ -105,9 +105,9 @@ fundamentally different:
 Both legacy CLAN `+flag`/`-flag` and modern `--flag` syntax are accepted.
 The CLI auto-translates via `clan_args::rewrite_clan_args()`.
 
-| Aspect | CLAN | `chatter clan` |
+| Aspect | CLAN | `chatter-clan` |
 |--------|------|----------------|
-| Invocation | `freq file.cha` | `chatter clan freq file.cha` |
+| Invocation | `freq file.cha` | `chatter-clan freq file.cha` |
 | Speaker include | `+t*CHI` | `--speaker CHI` |
 | Speaker exclude | `-t*INV` | `--exclude-speaker INV` |
 | Tier include | `+t%mor` | `--tier mor` |
@@ -125,18 +125,18 @@ The CLI auto-translates via `clan_args::rewrite_clan_args()`.
 | Context window | `+wN` / `-wN` | `--context-after N` / `--context-before N` |
 | Merge across files | `+u` | Default behavior (always on) |
 | Output format | Text only | `--format text\|json\|csv\|clan` |
-| Multiple files | `freq *.cha` (glob) | `chatter clan freq dir/` (recursive) |
+| Multiple files | `freq *.cha` (glob) | `chatter-clan freq dir/` (recursive) |
 
 ### Output Envelope
 
 CLAN wraps output in a verbose envelope (command echo, timestamp, filter
-summary). `chatter clan` uses `render_clan()` for CLAN-compatible output
+summary). `chatter-clan` uses `render_clan()` for CLAN-compatible output
 format and `render_text()` for clean output. The envelope is omitted in
 both modes, the information is available via shell history and `date`.
 
 ### Error Handling
 
-| Behavior | CLAN | `chatter clan` |
+| Behavior | CLAN | `chatter-clan` |
 |----------|------|----------------|
 | Unparseable file | Prints error, continues | Logs warning (via `tracing`), continues |
 | No `.cha` files found | Varies by command | Prints error, exits with code 1 |
@@ -144,7 +144,7 @@ both modes, the information is available via shell history and `date`.
 
 ### Multi-File Aggregation
 
-| Behavior | CLAN | `chatter clan` |
+| Behavior | CLAN | `chatter-clan` |
 |----------|------|----------------|
 | Default | Per-file output | Merged across files |
 | Merged | Requires `+u` flag | Default behavior |
@@ -152,15 +152,15 @@ both modes, the information is available via shell history and `date`.
 ### File Output
 
 CLAN's `+f` flag writes output to auto-named files (e.g., `sample.frq.cex`).
-`chatter clan` always writes to stdout. Use shell redirection:
+`chatter-clan` always writes to stdout. Use shell redirection:
 
 ```bash
 # CLAN:
 freq +f sample.cha              # -> sample.frq.cex
 
 # chatter:
-chatter clan freq sample.cha > sample.frq.txt
-chatter clan freq sample.cha --format json > sample.frq.json
+chatter-clan freq sample.cha > sample.frq.txt
+chatter-clan freq sample.cha --format json > sample.frq.json
 ```
 
 ---

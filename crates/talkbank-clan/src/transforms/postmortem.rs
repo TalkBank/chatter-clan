@@ -67,11 +67,11 @@ impl TransformCommand for PostmortemCommand {
 
     /// Apply pattern-matching rules to the target tier on each utterance.
     fn transform(&self, file: &mut ChatFile) -> Result<(), TransformError> {
-        for line in file.lines.iter_mut() {
+        for line in file.lines.as_mut_slice().iter_mut() {
             if let Line::Utterance(utt) = line {
                 // Find the target tier and apply rules
                 for dep in utt.dependent_tiers.iter_mut() {
-                    let is_target = match dep {
+                    let is_target = match &dep.tier {
                         DependentTier::Mor(_) if self.target_tier == "mor" => true,
                         DependentTier::UserDefined(u)
                             if u.label.as_str().eq_ignore_ascii_case(&self.target_tier) =>
@@ -82,7 +82,7 @@ impl TransformCommand for PostmortemCommand {
                     };
 
                     if is_target {
-                        match dep {
+                        match &dep.tier {
                             DependentTier::Mor(tier) => {
                                 let content = mor_item_texts(tier).join(" ");
                                 let modified = apply_rules(&content, &self.rules);
@@ -97,21 +97,12 @@ impl TransformCommand for PostmortemCommand {
                                 }
                             }
                             _ => {
-                                let content = dependent_tier_content_text(dep);
+                                let content = dependent_tier_content_text(&dep.tier);
                                 let modified = apply_rules(&content, &self.rules);
                                 if modified != content
-                                    && let (Some(label), Some(new_content)) = (
-                                        talkbank_model::NonEmptyString::new(&self.target_tier),
-                                        talkbank_model::NonEmptyString::new(&modified),
-                                    )
+                                    && let DependentTier::UserDefined(u) = &mut dep.tier
                                 {
-                                    *dep = DependentTier::UserDefined(
-                                        talkbank_model::UserDefinedDependentTier {
-                                            label,
-                                            content: new_content,
-                                            span: talkbank_model::Span::DUMMY,
-                                        },
-                                    );
+                                    u.content = talkbank_model::RecoveryText::new(&modified).ok();
                                 }
                             }
                         }
@@ -216,8 +207,8 @@ fn load_rules(path: &Path) -> Result<Vec<Rule>, TransformError> {
 mod tests {
     use super::*;
     use talkbank_model::{
-        ChatFile, DependentTier, Line, MainTier, Mor, MorTier, MorWord, PosCategory, Terminator,
-        UserDefinedDependentTier, Utterance, UtteranceContent, Word,
+        ChatFile, DependentTier, Line, Mor, MorTier, MorWord, PosCategory,
+        UserDefinedDependentTier, Utterance, UtteranceContent,
     };
 
     #[test]
@@ -252,23 +243,23 @@ mod tests {
 
     #[test]
     fn postmortem_errors_on_mor_rewrite() {
-        let mut utt = Utterance::new(MainTier::new(
+        let mut utt = Utterance::new(crate::test_support::main_tier(
             "CHI",
-            vec![UtteranceContent::Word(Box::new(Word::simple("dog")))],
-            Terminator::Period {
-                span: talkbank_model::Span::DUMMY,
-            },
+            vec![UtteranceContent::Word(Box::new(crate::test_support::word(
+                "dog",
+            )))],
         ));
-        utt.dependent_tiers
-            .push(DependentTier::Mor(MorTier::new_mor(
+        utt.dependent_tiers.push(
+            DependentTier::Mor(MorTier::new_mor(
+                talkbank_model::Location::Unlocated,
                 vec![
                     Mor::new(MorWord::new(PosCategory::new("det"), "the")),
                     Mor::new(MorWord::new(PosCategory::new("n"), "dog")),
                 ],
-                talkbank_model::Terminator::Period {
-                    span: talkbank_model::Span::DUMMY,
-                },
-            )));
+                crate::test_support::period(),
+            ))
+            .into(),
+        );
 
         let mut file = ChatFile::new(vec![Line::Utterance(Box::new(utt))]);
 
@@ -288,19 +279,20 @@ mod tests {
 
     #[test]
     fn postmortem_rewrites_user_defined_target() {
-        let mut utt = Utterance::new(MainTier::new(
+        let mut utt = Utterance::new(crate::test_support::main_tier(
             "CHI",
-            vec![UtteranceContent::Word(Box::new(Word::simple("dog")))],
-            Terminator::Period {
-                span: talkbank_model::Span::DUMMY,
-            },
+            vec![UtteranceContent::Word(Box::new(crate::test_support::word(
+                "dog",
+            )))],
         ));
-        utt.dependent_tiers
-            .push(DependentTier::UserDefined(UserDefinedDependentTier {
-                label: talkbank_model::NonEmptyString::new("xmor").unwrap(),
-                content: talkbank_model::NonEmptyString::new("det|the n|dog .").unwrap(),
-                span: talkbank_model::Span::DUMMY,
-            }));
+        utt.dependent_tiers.push(
+            DependentTier::UserDefined(UserDefinedDependentTier {
+                label: talkbank_model::UserDefinedDependentTierLabel::new("xmor").unwrap(),
+                content: talkbank_model::RecoveryText::new("det|the n|dog .").ok(),
+                location: talkbank_model::Location::Unlocated,
+            })
+            .into(),
+        );
         let mut file = ChatFile::new(vec![Line::Utterance(Box::new(utt))]);
 
         let cmd = PostmortemCommand {
@@ -317,8 +309,11 @@ mod tests {
         let Line::Utterance(utt) = &file.lines[0] else {
             panic!("expected utterance");
         };
-        match &utt.dependent_tiers[0] {
-            DependentTier::UserDefined(tier) => assert_eq!(tier.content.as_str(), "det|a n|dog ."),
+        match &utt.dependent_tiers[0].tier {
+            DependentTier::UserDefined(tier) => assert_eq!(
+                tier.content.as_ref().map(|c| c.as_str()),
+                Some("det|a n|dog .")
+            ),
             other => panic!("expected rewritten user-defined tier, got {other:?}"),
         }
     }

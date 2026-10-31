@@ -11,7 +11,7 @@ fn parse_content(chat: &str) -> Vec<UtteranceContent> {
         .lines
         .into_iter()
         .find_map(|line| match line {
-            Line::Utterance(utt) => Some(utt.main.content.content.0),
+            Line::Utterance(utt) => Some(utt.main.content.content.into_vec()),
             _ => None,
         })
         .expect("expected utterance")

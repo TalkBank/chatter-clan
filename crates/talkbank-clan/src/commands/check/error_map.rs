@@ -42,7 +42,6 @@ pub fn check_error_number(code: &ErrorCode) -> u16 {
         ErrorCode::MediaFilenameMismatch => 157, // Media name mismatch
         ErrorCode::UnsupportedSex => 64,       // Wrong gender
         ErrorCode::UnsupportedSesValue => 144, // Illegal SES
-        ErrorCode::EmptyOptionsHeader => 103,  // Approximate: options issue
         ErrorCode::UnsupportedMediaType => 113, // Illegal media keyword
 
         // -- Bracket/delimiter matching --

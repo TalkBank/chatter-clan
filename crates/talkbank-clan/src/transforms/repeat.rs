@@ -24,7 +24,7 @@
 //!   string-matching the `*SPK:` prefix.
 
 use talkbank_model::{
-    BracketedItem, ChatFile, Line, Postcode, RetraceKind, SpeakerCode, UtteranceContent,
+    BracketedItem, ChatFile, Line, Location, Postcode, RetraceKind, SpeakerCode, UtteranceContent,
 };
 
 use crate::framework::{TransformCommand, TransformError};
@@ -47,7 +47,7 @@ impl TransformCommand for RepeatCommand {
 
     /// Append `[+ rep]` to target-speaker utterances containing revision markers.
     fn transform(&self, file: &mut ChatFile) -> Result<(), TransformError> {
-        for line in file.lines.iter_mut() {
+        for line in file.lines.as_mut_slice().iter_mut() {
             if let Line::Utterance(utterance) = line {
                 // Only process utterances from the target speaker
                 if utterance.main.speaker != self.speaker {
@@ -62,10 +62,14 @@ impl TransformCommand for RepeatCommand {
                         .content
                         .postcodes
                         .iter()
-                        .any(|p| p.text == "rep");
+                        .any(|p| p.text() == Some("rep"));
 
                     if !already_has_rep {
-                        utterance.main.content.postcodes.push(Postcode::new("rep"));
+                        utterance
+                            .main
+                            .content
+                            .postcodes
+                            .push(Postcode::new(Location::Unlocated, "rep"));
                     }
                 }
             }

@@ -33,7 +33,7 @@ use std::path::{Path, PathBuf};
 
 use talkbank_model::{BracketedItem, ChatFile, Line, UtteranceContent, Word};
 
-use crate::framework::{TransformCommand, TransformError};
+use crate::framework::{TransformCommand, TransformError, replace_word_text};
 
 /// A find/replace pair from the changes file.
 #[derive(Debug, Clone)]
@@ -88,9 +88,9 @@ impl TransformCommand for ChstringCommand {
             return Ok(());
         }
 
-        for line in file.lines.iter_mut() {
+        for line in file.lines.as_mut_slice().iter_mut() {
             if let Line::Utterance(utterance) = line {
-                apply_changes_to_content(&mut utterance.main.content.content, &changes);
+                apply_changes_to_content(utterance.main.content.content.as_mut_slice(), &changes)?;
             }
         }
 
@@ -99,60 +99,75 @@ impl TransformCommand for ChstringCommand {
 }
 
 /// Apply string replacements to utterance content items.
-fn apply_changes_to_content(items: &mut [UtteranceContent], changes: &[ChangePair]) {
+fn apply_changes_to_content(
+    items: &mut [UtteranceContent],
+    changes: &[ChangePair],
+) -> Result<(), TransformError> {
     for item in items.iter_mut() {
         match item {
-            UtteranceContent::Word(word) => apply_changes_to_word(word, changes),
+            UtteranceContent::Word(word) => apply_changes_to_word(word, changes)?,
             UtteranceContent::AnnotatedWord(annotated) => {
-                apply_changes_to_word(&mut annotated.inner, changes);
+                apply_changes_to_word(&mut annotated.inner, changes)?;
             }
             UtteranceContent::ReplacedWord(replaced) => {
-                apply_changes_to_word(&mut replaced.word, changes);
-                for rep in replaced.replacement.words.iter_mut() {
-                    apply_changes_to_word(rep, changes);
+                apply_changes_to_word(&mut replaced.word, changes)?;
+                for rep in replaced.replacement.words.as_mut_slice().iter_mut() {
+                    apply_changes_to_word(rep, changes)?;
                 }
             }
             UtteranceContent::Group(group) => {
-                apply_changes_to_bracketed(&mut group.content.content, changes);
+                apply_changes_to_bracketed(group.content.content.as_mut_slice(), changes)?;
             }
             UtteranceContent::AnnotatedGroup(annotated) => {
-                apply_changes_to_bracketed(&mut annotated.inner.content.content, changes);
+                apply_changes_to_bracketed(
+                    annotated.inner.content.content.as_mut_slice(),
+                    changes,
+                )?;
             }
             _ => {}
         }
     }
+    Ok(())
 }
 
 /// Apply string replacements to bracketed items.
-fn apply_changes_to_bracketed(items: &mut [BracketedItem], changes: &[ChangePair]) {
+fn apply_changes_to_bracketed(
+    items: &mut [BracketedItem],
+    changes: &[ChangePair],
+) -> Result<(), TransformError> {
     for item in items.iter_mut() {
         match item {
-            BracketedItem::Word(word) => apply_changes_to_word(word, changes),
+            BracketedItem::Word(word) => apply_changes_to_word(word, changes)?,
             BracketedItem::AnnotatedWord(annotated) => {
-                apply_changes_to_word(&mut annotated.inner, changes);
+                apply_changes_to_word(&mut annotated.inner, changes)?;
             }
             BracketedItem::ReplacedWord(replaced) => {
-                apply_changes_to_word(&mut replaced.word, changes);
-                for rep in replaced.replacement.words.iter_mut() {
-                    apply_changes_to_word(rep, changes);
+                apply_changes_to_word(&mut replaced.word, changes)?;
+                for rep in replaced.replacement.words.as_mut_slice().iter_mut() {
+                    apply_changes_to_word(rep, changes)?;
                 }
             }
             BracketedItem::AnnotatedGroup(annotated) => {
-                apply_changes_to_bracketed(&mut annotated.inner.content.content, changes);
+                apply_changes_to_bracketed(
+                    annotated.inner.content.content.as_mut_slice(),
+                    changes,
+                )?;
             }
             _ => {}
         }
     }
+    Ok(())
 }
 
 /// Apply string replacements to a single word's text.
-fn apply_changes_to_word(word: &mut Word, changes: &[ChangePair]) {
+fn apply_changes_to_word(word: &mut Word, changes: &[ChangePair]) -> Result<(), TransformError> {
     let raw = word.raw_text().to_owned();
     let mut result = raw.clone();
     for change in changes {
         result = result.replace(&change.find, &change.replace);
     }
     if result != raw {
-        word.replace_simple_text(result);
+        replace_word_text(word, &result)?;
     }
+    Ok(())
 }

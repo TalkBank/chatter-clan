@@ -12,15 +12,15 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409300
 ## Usage
 
 ```bash
-chatter clan chat2elan file.cha
-chatter clan chat2elan --media-extension wav file.cha
+chatter-clan chat2elan file.cha
+chatter-clan chat2elan --media-extension wav file.cha
 ```
 
 ## CLAN Equivalence
 
 | CLAN command                   | Rust equivalent                             |
 |--------------------------------|---------------------------------------------|
-| `chat2elan +e.wav file.cha`    | `chatter clan chat2elan file.cha`           |
+| `chat2elan +e.wav file.cha`    | `chatter-clan chat2elan file.cha`           |
 
 ## Options
 

@@ -12,7 +12,7 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409329
 ## Usage
 
 ```bash
-chatter clan lowcase file.cha
+chatter-clan lowcase file.cha
 ```
 
 ## Options

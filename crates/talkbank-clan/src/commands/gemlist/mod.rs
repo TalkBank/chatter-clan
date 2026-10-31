@@ -122,7 +122,7 @@ impl AnalysisCommand for GemlistCommand {
                     active_gems.push(label_str.clone());
 
                     // Count this as a new occurrence of this gem label
-                    let key = format!("{}:{}", file_context.filename, &label_str);
+                    let key = format!("{}:{}", file_context.filename, label_str);
                     if seen_begins.insert(key) {
                         state
                             .by_label

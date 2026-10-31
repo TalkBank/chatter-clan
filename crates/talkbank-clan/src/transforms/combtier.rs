@@ -17,7 +17,7 @@
 //! - Combined result is stored as a user-defined tier to preserve the
 //!   concatenated text faithfully.
 
-use talkbank_model::{BulletContent, ChatFile, DependentTier, Line, NonEmptyString};
+use talkbank_model::{BulletContent, ChatFile, DependentTier, Line, RecoveryText};
 
 use crate::framework::{TransformCommand, TransformError, dependent_tier_content_text};
 
@@ -48,15 +48,15 @@ impl TransformCommand for CombtierCommand {
     fn transform(&self, file: &mut ChatFile) -> Result<(), TransformError> {
         let tier_label = self.config.tier.to_lowercase();
 
-        for line in file.lines.iter_mut() {
+        for line in file.lines.as_mut_slice().iter_mut() {
             if let Line::Utterance(utt) = line {
                 let mut combined_texts: Vec<String> = Vec::new();
                 let mut indices_to_remove: Vec<usize> = Vec::new();
 
                 // Collect matching tier content and track indices
                 for (idx, dep) in utt.dependent_tiers.iter().enumerate() {
-                    if tier_matches(dep, &tier_label) {
-                        combined_texts.push(tier_text_content(dep));
+                    if tier_matches(&dep.tier, &tier_label) {
+                        combined_texts.push(tier_text_content(&dep.tier));
                         indices_to_remove.push(idx);
                     }
                 }
@@ -74,7 +74,7 @@ impl TransformCommand for CombtierCommand {
                     if let Some(&first_idx) = indices_to_remove.first()
                         && let Some(tier) = utt.dependent_tiers.get_mut(first_idx)
                     {
-                        replace_tier_content(tier, &combined);
+                        replace_tier_content(&mut tier.tier, &combined)?;
                     }
                 }
             }
@@ -113,13 +113,16 @@ fn tier_text_content(tier: &DependentTier) -> String {
         | DependentTier::Flo(t)
         | DependentTier::Ort(t)
         | DependentTier::Par(t) => t.as_str().to_owned(),
-        DependentTier::UserDefined(u) => u.content.as_str().to_owned(),
+        DependentTier::UserDefined(u) => u
+            .content
+            .as_ref()
+            .map_or_else(String::new, |c| c.as_str().to_owned()),
         other => dependent_tier_content_text(other),
     }
 }
 
 /// Replace the content of a dependent tier while preserving its tier type when possible.
-fn replace_tier_content(tier: &mut DependentTier, new_content: &str) {
+fn replace_tier_content(tier: &mut DependentTier, new_content: &str) -> Result<(), TransformError> {
     let new_bullet_content = BulletContent::from_text(new_content);
 
     match tier {
@@ -138,35 +141,36 @@ fn replace_tier_content(tier: &mut DependentTier, new_content: &str) {
         | DependentTier::Flo(t)
         | DependentTier::Ort(t)
         | DependentTier::Par(t) => {
-            if let Some(ne) = NonEmptyString::new(new_content) {
-                t.content = ne;
+            if let Ok(ne) = RecoveryText::new(new_content) {
+                t.content = Some(ne);
             }
         }
         DependentTier::UserDefined(u) => {
-            if let Some(ne) = NonEmptyString::new(new_content) {
-                u.content = ne;
+            if let Ok(ne) = RecoveryText::new(new_content) {
+                u.content = Some(ne);
             }
         }
-        // Caller-contract invariant: `replace_tier_content` is only
-        // invoked for the tier kinds enumerated above; the caller
-        // (within this transform) filters tiers by kind before
-        // calling.
-        #[allow(clippy::unreachable)]
-        _ => unreachable!("replace_tier_content called with unsupported tier kind"),
+        _ => {
+            return Err(TransformError::Transform(format!(
+                "combtier cannot rewrite %{} tiers",
+                tier.kind()
+            )));
+        }
     }
+    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use talkbank_model::Span;
-    use talkbank_model::{
-        CodTier, ComTier, MainTier, Terminator, Utterance, UtteranceContent, Word,
-    };
+
+    use talkbank_model::{ComTier, Utterance, UtteranceContent};
 
     fn make_utterance() -> Utterance {
-        let content = vec![UtteranceContent::Word(Box::new(Word::simple("hello")))];
-        let main = MainTier::new("CHI", content, Terminator::Period { span: Span::DUMMY });
+        let content = vec![UtteranceContent::Word(Box::new(crate::test_support::word(
+            "hello",
+        )))];
+        let main = crate::test_support::main_tier("CHI", content);
         Utterance::new(main)
     }
 
@@ -174,9 +178,9 @@ mod tests {
     fn combtier_preserves_cod_tier_type() {
         let mut utt = make_utterance();
         utt.dependent_tiers
-            .push(DependentTier::Cod(CodTier::from_text("$A")));
+            .push(DependentTier::Cod(crate::test_support::cod_tier("$A")).into());
         utt.dependent_tiers
-            .push(DependentTier::Cod(CodTier::from_text("$B")));
+            .push(DependentTier::Cod(crate::test_support::cod_tier("$B")).into());
         let mut file = ChatFile::new(vec![Line::Utterance(Box::new(utt))]);
 
         CombtierCommand::new(CombtierConfig {
@@ -190,7 +194,7 @@ mod tests {
             panic!("expected utterance");
         };
         assert_eq!(utt.dependent_tiers.len(), 1);
-        match &utt.dependent_tiers[0] {
+        match &utt.dependent_tiers[0].tier {
             DependentTier::Cod(tier) => assert_eq!(tier.to_chat(), "%cod:\t$A $B"),
             other => panic!("expected cod tier, got {other:?}"),
         }
@@ -199,10 +203,20 @@ mod tests {
     #[test]
     fn combtier_preserves_com_tier_type() {
         let mut utt = make_utterance();
-        utt.dependent_tiers
-            .push(DependentTier::Com(ComTier::from_text("one")));
-        utt.dependent_tiers
-            .push(DependentTier::Com(ComTier::from_text("two")));
+        utt.dependent_tiers.push(
+            DependentTier::Com(ComTier::from_text(
+                talkbank_model::Location::Unlocated,
+                "one",
+            ))
+            .into(),
+        );
+        utt.dependent_tiers.push(
+            DependentTier::Com(ComTier::from_text(
+                talkbank_model::Location::Unlocated,
+                "two",
+            ))
+            .into(),
+        );
         let mut file = ChatFile::new(vec![Line::Utterance(Box::new(utt))]);
 
         CombtierCommand::new(CombtierConfig {
@@ -216,7 +230,7 @@ mod tests {
             panic!("expected utterance");
         };
         assert_eq!(utt.dependent_tiers.len(), 1);
-        match &utt.dependent_tiers[0] {
+        match &utt.dependent_tiers[0].tier {
             DependentTier::Com(tier) => assert_eq!(tier.to_chat(), "%com:\tone | two"),
             other => panic!("expected com tier, got {other:?}"),
         }

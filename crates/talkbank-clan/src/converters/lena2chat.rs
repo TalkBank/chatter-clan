@@ -36,13 +36,9 @@
 
 use quick_xml::Reader;
 use quick_xml::events::Event;
-use talkbank_model::Span;
-use talkbank_model::{
-    Bullet, ChatFile, Header, IDHeader, LanguageCode, LanguageCodes, Line, MainTier,
-    ParticipantEntries, ParticipantEntry, ParticipantRole, SpeakerCode, Terminator, Utterance,
-    UtteranceContent, Word,
-};
+use talkbank_model::{ChatFile, Header, Line, ParticipantRole, SpeakerCode, Utterance};
 
+use super::build;
 use crate::framework::TransformError;
 
 /// A parsed LENA segment.
@@ -88,17 +84,17 @@ fn parse_lena(content: &str) -> Result<Vec<LenaSegment>, TransformError> {
 
                 for attr in e.attributes().flatten() {
                     match attr.key.as_ref() {
-                        b"spkr" => {
+                        "spkr" => {
                             spkr = Some(attr.unescape_value().unwrap_or_default().into_owned());
                         }
-                        b"startTime" => {
+                        "startTime" => {
                             start_time =
                                 Some(attr.unescape_value().unwrap_or_default().into_owned());
                         }
-                        b"endTime" => {
+                        "endTime" => {
                             end_time = Some(attr.unescape_value().unwrap_or_default().into_owned());
                         }
-                        b"wordCnt" => {
+                        "wordCnt" => {
                             word_cnt = attr.unescape_value().ok().and_then(|v| v.parse().ok());
                         }
                         _ => {}
@@ -180,7 +176,7 @@ pub fn lena_to_chat_with_options(
     corpus: &str,
 ) -> Result<ChatFile, TransformError> {
     let segments = parse_lena(content)?;
-    let lang = LanguageCode::new(language);
+    let lang = build::language(language)?;
 
     // Collect unique CHAT speakers from segments
     let mut speaker_set: Vec<String> = Vec::new();
@@ -194,7 +190,7 @@ pub fn lena_to_chat_with_options(
         speaker_set.push("CHI".to_owned());
     }
 
-    let participant_entries: Vec<ParticipantEntry> = speaker_set
+    let participants: Vec<(SpeakerCode, ParticipantRole)> = speaker_set
         .iter()
         .map(|s| {
             let role = match s.as_str() {
@@ -203,41 +199,10 @@ pub fn lena_to_chat_with_options(
                 "FAT" => "Father",
                 _ => "Unidentified",
             };
-            ParticipantEntry {
-                speaker_code: SpeakerCode::new(s),
-                name: None,
-                role: ParticipantRole::new(role),
-            }
+            (SpeakerCode::new(s), ParticipantRole::new(role))
         })
         .collect();
-
-    let mut lines = vec![
-        Line::header(Header::Utf8),
-        Line::header(Header::Begin),
-        Line::header(Header::Languages {
-            codes: LanguageCodes::new(vec![lang.clone()]),
-        }),
-        Line::header(Header::Participants {
-            entries: ParticipantEntries::new(participant_entries),
-        }),
-    ];
-
-    for s in &speaker_set {
-        let role = match s.as_str() {
-            "CHI" => "Target_Child",
-            "MOT" => "Mother",
-            "FAT" => "Father",
-            _ => "Unidentified",
-        };
-        lines.push(Line::header(Header::ID(
-            IDHeader::new(
-                lang.clone(),
-                SpeakerCode::new(s),
-                ParticipantRole::new(role),
-            )
-            .with_corpus(corpus),
-        )));
-    }
+    let mut lines = build::preamble(&lang, &participants, corpus);
 
     for seg in &segments {
         let chat_speaker = lena_speaker(&seg.segment_type);
@@ -257,19 +222,15 @@ pub fn lena_to_chat_with_options(
             "xxx".to_owned()
         };
 
-        let words = vec![UtteranceContent::Word(Box::new(Word::simple(&word_text)))];
+        let words = vec![build::word(&word_text)?];
 
-        let main_tier = MainTier::new(
-            SpeakerCode::new(chat_speaker),
-            words,
-            Terminator::Period { span: Span::DUMMY },
-        )
-        .with_bullet(Bullet::new(seg.start_ms, seg.end_ms));
+        let main_tier = build::main_tier(SpeakerCode::new(chat_speaker), words, build::period())
+            .with_bullet(build::bullet(seg.start_ms, seg.end_ms));
 
         lines.push(Line::utterance(Utterance::new(main_tier)));
     }
 
-    lines.push(Line::header(Header::End));
+    lines.push(build::header(Header::End));
 
     Ok(ChatFile::new(lines))
 }

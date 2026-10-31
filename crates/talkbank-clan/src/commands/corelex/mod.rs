@@ -9,8 +9,8 @@
 //!
 //! | CLAN command | Rust equivalent |
 //! |---|---|
-//! | `corelex file.cha` | `chatter clan corelex file.cha` |
-//! | `corelex +t*CHI file.cha` | `chatter clan corelex --speaker CHI file.cha` |
+//! | `corelex file.cha` | `chatter-clan corelex file.cha` |
+//! | `corelex +t*CHI file.cha` | `chatter-clan corelex --speaker CHI file.cha` |
 //!
 //! # Differences from CLAN
 //!

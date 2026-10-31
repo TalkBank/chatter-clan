@@ -38,6 +38,7 @@ mod command;
 pub mod diversity;
 pub mod domain_types;
 mod filter;
+pub(crate) mod id_columns;
 mod id_filter;
 mod input;
 pub mod mor;
@@ -84,7 +85,10 @@ pub use output::{
 };
 pub use runner::{AnalysisRunner, RunnerError};
 pub use stats::population_sd;
-pub use transform::{TransformCommand, TransformError, run_transform};
+pub use transform::{
+    TransformCommand, TransformError, parsed_bullet, parsed_bullet_mut, replace_word_text,
+    run_transform,
+};
 pub use word_filter::{
     CapitalizationFilter, ReplacementChoice, RetraceReplaceMode, WordDelimiters, countable_words,
     countable_words_in_utterance, countable_words_in_utterance_with_retracings,

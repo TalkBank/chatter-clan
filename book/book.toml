@@ -1,7 +1,7 @@
 [book]
 title = "chatter-clan: CLAN Command Reference"
 authors = ["TalkBank Contributors"]
-description = "User and developer documentation for chatter-clan, the dormant Rust reimplementation of CLAN's analysis commands over the chatter CHAT toolchain."
+description = "User and developer documentation for chatter-clan, the standalone Rust reimplementation of CLAN commands over the chatter CHAT toolchain."
 language = "en"
 src = "src"
 

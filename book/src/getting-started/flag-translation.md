@@ -22,7 +22,7 @@ The original CLAN uses a `+flag`/`-flag` syntax that differs from standard CLI c
 | `+r6` | `--include-retracings` | Count retraced material |
 | `+u` | *(default behavior)* | Merge speakers (already default) |
 | `+dN` | `--display-mode N` *(generic)* / per-command typed flag | Display mode, **partially landed.** Each `+dN` value is rewritten command-by-command. FREQ `+d1` → `--word-list-only`, `+d2` → `--format csv`, `+d3` → `--types-tokens-only --format csv`, `+d4` → `--types-tokens-only`. COOCCUR `+d` → `--no-frequency-counts`. FREQPOS `+d` → `--position-classification second`. Other `+dN` values still fall through to the generic `--display-mode N` placeholder, which clap does not consume yet (see Phase 3 plan). |
-| `+k` | `--case-sensitive` | Case-sensitive matching, **fully landed** across the search/frequency family (FREQ, KWAL, VOCD, COMBO, FREQPOS, DIST, MAXWD). FREQ: pattern matching via `WordFilter` + case-preserving frequency-table keying. KWAL: keyword and word compared verbatim instead of via `NormalizedWord` lowercasing. VOCD: pattern matching + D-statistic token stream skipping its default `to_lowercase`. COMBO: `SearchExpr::parse_with_case` preserves case in the stored terms and the word stream populates via `cleaned_text()`. FREQPOS / DIST / MAXWD: case-preserving key derivation in `process_utterance` (MAXWD's unique-length and exclude-length filters then count case variants as distinct words). Other commands inherit `+k` from `cutt.cpp::mainusage` but it's a semantic no-op since they don't word-match. |
+| `+k` | `--plus-k` (`--case-sensitive` alias) | Flip the command's case mode. FREQ, VOCD, and CHIP preserve case by default and fold under `+k`; KWAL, COMBO, FREQPOS, DIST, and MAXWD fold by default and preserve under `+k`. Other inherited `+k` flags may be no-ops; check each command's parity page. |
 | ~~`+fEXT`~~ | ~~`--output-ext EXT`~~ | Output file extension, **currently non-functional**: the rewriter at `crates/talkbank-clan/src/clan_args.rs:107` produces `--output-ext`, but no `clap` field consumes it. Tracked as Phase 2 of the rewriter-honor plan (blocked on a batch-output prerequisite). |
 | `+wN` | `--context-after N` | Context lines after match |
 | `-wN` | `--context-before N` | Context lines before match |
@@ -36,7 +36,7 @@ The original CLAN uses a `+flag`/`-flag` syntax that differs from standard CLI c
 freq +t*CHI -t*MOT file.cha
 
 # Modern equivalent
-chatter clan freq --speaker CHI --exclude-speaker MOT file.cha
+chatter-clan freq --speaker CHI --exclude-speaker MOT file.cha
 ```
 
 ### Word Search
@@ -47,7 +47,7 @@ chatter clan freq --speaker CHI --exclude-speaker MOT file.cha
 combo +s"want^need" file.cha
 
 # Modern equivalent
-chatter clan combo --search "want^need" file.cha
+chatter-clan combo --search "want^need" file.cha
 ```
 
 ### Combined Filters
@@ -57,7 +57,7 @@ chatter clan combo --search "want^need" file.cha
 freq +t*CHI +z10-50 +r6 file.cha
 
 # Modern equivalent
-chatter clan freq --speaker CHI --range 10-50 --include-retracings file.cha
+chatter-clan freq --speaker CHI --range 10-50 --include-retracings file.cha
 ```
 
 ## Notes

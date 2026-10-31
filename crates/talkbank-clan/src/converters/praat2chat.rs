@@ -37,13 +37,9 @@
 
 use std::fmt::Write;
 
-use talkbank_model::Span;
-use talkbank_model::{
-    Bullet, ChatFile, Header, IDHeader, LanguageCode, LanguageCodes, Line, MainTier,
-    ParticipantEntries, ParticipantEntry, ParticipantRole, SpeakerCode, Terminator, Utterance,
-    UtteranceContent, Word,
-};
+use talkbank_model::{ChatFile, Header, Line, ParticipantRole, SpeakerCode, Utterance};
 
+use super::build;
 use crate::framework::{TransformError, spoken_main_text};
 
 /// A parsed TextGrid interval.
@@ -207,7 +203,7 @@ pub fn praat_to_chat_with_options(
     corpus: &str,
 ) -> Result<ChatFile, TransformError> {
     let tiers = parse_textgrid(content)?;
-    let lang = LanguageCode::new(language);
+    let lang = build::language(language)?;
 
     // Use tier names as speaker codes (truncate to 3 chars uppercase)
     let speakers: Vec<(SpeakerCode, String)> = tiers
@@ -218,36 +214,11 @@ pub fn praat_to_chat_with_options(
         })
         .collect();
 
-    let participant_entries: Vec<ParticipantEntry> = speakers
+    let participants: Vec<(SpeakerCode, ParticipantRole)> = speakers
         .iter()
-        .map(|(code, _)| ParticipantEntry {
-            speaker_code: code.clone(),
-            name: None,
-            role: ParticipantRole::new("Unidentified"),
-        })
+        .map(|(code, _)| (code.clone(), ParticipantRole::new("Unidentified")))
         .collect();
-
-    let mut lines = vec![
-        Line::header(Header::Utf8),
-        Line::header(Header::Begin),
-        Line::header(Header::Languages {
-            codes: LanguageCodes::new(vec![lang.clone()]),
-        }),
-        Line::header(Header::Participants {
-            entries: ParticipantEntries::new(participant_entries),
-        }),
-    ];
-
-    for (code, _) in &speakers {
-        lines.push(Line::header(Header::ID(
-            IDHeader::new(
-                lang.clone(),
-                code.clone(),
-                ParticipantRole::new("Unidentified"),
-            )
-            .with_corpus(corpus),
-        )));
-    }
+    let mut lines = build::preamble(&lang, &participants, corpus);
 
     // Convert intervals to utterances
     for (tier_idx, tier) in tiers.iter().enumerate() {
@@ -258,11 +229,11 @@ pub fn praat_to_chat_with_options(
                 continue;
             }
 
-            let words: Vec<UtteranceContent> = interval
+            let words = interval
                 .text
                 .split_whitespace()
-                .map(|w| UtteranceContent::Word(Box::new(Word::simple(w))))
-                .collect();
+                .map(build::word)
+                .collect::<Result<Vec<_>, _>>()?;
 
             if words.is_empty() {
                 continue;
@@ -271,15 +242,14 @@ pub fn praat_to_chat_with_options(
             let start_ms = (interval.xmin * 1000.0) as u64;
             let end_ms = (interval.xmax * 1000.0) as u64;
 
-            let main_tier =
-                MainTier::new(spk.clone(), words, Terminator::Period { span: Span::DUMMY })
-                    .with_bullet(Bullet::new(start_ms, end_ms));
+            let main_tier = build::main_tier(spk.clone(), words, build::period())
+                .with_bullet(build::bullet(start_ms, end_ms));
 
             lines.push(Line::utterance(Utterance::new(main_tier)));
         }
     }
 
-    lines.push(Line::header(Header::End));
+    lines.push(build::header(Header::End));
 
     Ok(ChatFile::new(lines))
 }
@@ -307,7 +277,8 @@ pub fn chat_to_praat(chat: &ChatFile) -> Result<String, TransformError> {
         let speaker = utt.main.speaker.to_string();
         let text = spoken_main_text(&utt.main);
 
-        let (xmin, xmax) = if let Some(ref bullet) = utt.main.content.bullet {
+        let (xmin, xmax) = if let Some(state) = utt.main.content.bullet.as_ref() {
+            let bullet = crate::framework::parsed_bullet(state)?;
             let start = bullet.timing.start_ms as f64 / 1000.0;
             let end = bullet.timing.end_ms as f64 / 1000.0;
             (start, end)

@@ -1,18 +1,18 @@
 use super::output::format_duration_ms;
 use super::*;
 use crate::framework::{CommandOutput, FileContext};
-use talkbank_model::Span;
-use talkbank_model::content::Bullet;
-use talkbank_model::{MainTier, Terminator, UtteranceContent, Word};
+use talkbank_model::UtteranceContent;
 
 /// Build a minimal utterance fixture with explicit bullet timing.
 fn make_timed_utterance(speaker: &str, words: &[&str], start_ms: u64, end_ms: u64) -> Utterance {
     let content: Vec<UtteranceContent> = words
         .iter()
-        .map(|w| UtteranceContent::Word(Box::new(Word::simple(*w))))
+        .map(|w| UtteranceContent::Word(Box::new(crate::test_support::word(*w))))
         .collect();
-    let mut main = MainTier::new(speaker, content, Terminator::Period { span: Span::DUMMY });
-    main.content.bullet = Some(Bullet::new(start_ms, end_ms));
+    let mut main = crate::test_support::main_tier(speaker, content);
+    main.content.bullet = Some(talkbank_model::BulletState::Parsed(
+        crate::test_support::bullet(start_ms, end_ms),
+    ));
     Utterance::new(main)
 }
 
@@ -93,8 +93,10 @@ fn timedur_skips_untimed() {
     };
 
     // Utterance without bullet timing
-    let content = vec![UtteranceContent::Word(Box::new(Word::simple("hello")))];
-    let main = MainTier::new("CHI", content, Terminator::Period { span: Span::DUMMY });
+    let content = vec![UtteranceContent::Word(Box::new(crate::test_support::word(
+        "hello",
+    )))];
+    let main = crate::test_support::main_tier("CHI", content);
     let utterance = Utterance::new(main);
 
     command.process_utterance(&utterance, &file_ctx, &mut state);
@@ -146,12 +148,16 @@ fn timedur_untimed_tracks_speakers() {
     };
 
     // Two untimed utterances from different speakers
-    let content1 = vec![UtteranceContent::Word(Box::new(Word::simple("hello")))];
-    let main1 = MainTier::new("CHI", content1, Terminator::Period { span: Span::DUMMY });
+    let content1 = vec![UtteranceContent::Word(Box::new(crate::test_support::word(
+        "hello",
+    )))];
+    let main1 = crate::test_support::main_tier("CHI", content1);
     let u1 = Utterance::new(main1);
 
-    let content2 = vec![UtteranceContent::Word(Box::new(Word::simple("hi")))];
-    let main2 = MainTier::new("MOT", content2, Terminator::Period { span: Span::DUMMY });
+    let content2 = vec![UtteranceContent::Word(Box::new(crate::test_support::word(
+        "hi",
+    )))];
+    let main2 = crate::test_support::main_tier("MOT", content2);
     let u2 = Utterance::new(main2);
 
     command.process_utterance(&u1, &file_ctx, &mut state);

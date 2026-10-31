@@ -5,10 +5,17 @@ All notable changes to chatter-clan are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-chatter-clan is a **dormant, experimental** reimplementation kept buildable so it
-can be resumed or forked. No releases have been cut yet.
+The standalone CLAN replacement project resumed active development on
+2026-10-30. Parity remains in progress; no releases have been cut yet.
 
 ## [Unreleased]
+
+### Changed
+
+- Resumed parity work in this standalone repository; the project is not being
+  merged back into the chatter workspace.
+- Updated the CHAT core pin from `v0.2.1` to the latest published Chatter
+  release, `v0.33.0`.
 
 ### Added
 
@@ -20,12 +27,5 @@ can be resumed or forked. No releases have been cut yet.
   2026-06-15 builds standalone again.
 - Reconstructed the standalone book (its `book.toml` and `SUMMARY.md` were not
   carried over by the extraction).
-
-### Changed
-
-- The CHAT core (`talkbank-model`, `talkbank-transform`, and their transitive
-  crates) is consumed from the public chatter repo via git dependencies pinned
-  to the `v0.2.1` tag (the `@ID`-corpus-required and Xphoint API changes were
-  tracked when adopting it).
 
 [Unreleased]: https://github.com/TalkBank/chatter-clan/commits/main

@@ -24,12 +24,9 @@
 //! - Detects CHAT-style speaker prefixes (`*CHI:`, `*MOT:`) in the
 //!   extracted text; falls back to a default speaker if none are found.
 
-use talkbank_model::Span;
-use talkbank_model::{
-    ChatFile, Header, IDHeader, LanguageCode, LanguageCodes, Line, MainTier, ParticipantEntries,
-    ParticipantEntry, ParticipantRole, SpeakerCode, Terminator, Utterance, UtteranceContent, Word,
-};
+use talkbank_model::{ChatFile, Header, Line, ParticipantRole, SpeakerCode, Utterance};
 
+use super::build;
 use crate::framework::TransformError;
 
 /// Strip RTF control sequences and extract plain text.
@@ -221,7 +218,7 @@ pub fn rtf_to_chat_with_options(
     let plain = strip_rtf(content);
     let turns = extract_turns(&plain);
 
-    let lang = LanguageCode::new(language);
+    let lang = build::language(language)?;
 
     // Collect unique speakers
     let mut speaker_set: Vec<String> = Vec::new();
@@ -234,57 +231,28 @@ pub fn rtf_to_chat_with_options(
         speaker_set.push("SPK".to_owned());
     }
 
-    let participant_entries: Vec<ParticipantEntry> = speaker_set
+    let participants: Vec<(SpeakerCode, ParticipantRole)> = speaker_set
         .iter()
-        .map(|s| ParticipantEntry {
-            speaker_code: SpeakerCode::new(s),
-            name: None,
-            role: ParticipantRole::new("Unidentified"),
-        })
+        .map(|s| (SpeakerCode::new(s), ParticipantRole::new("Unidentified")))
         .collect();
-
-    let mut lines = vec![
-        Line::header(Header::Utf8),
-        Line::header(Header::Begin),
-        Line::header(Header::Languages {
-            codes: LanguageCodes::new(vec![lang.clone()]),
-        }),
-        Line::header(Header::Participants {
-            entries: ParticipantEntries::new(participant_entries),
-        }),
-    ];
-
-    for s in &speaker_set {
-        lines.push(Line::header(Header::ID(
-            IDHeader::new(
-                lang.clone(),
-                SpeakerCode::new(s),
-                ParticipantRole::new("Unidentified"),
-            )
-            .with_corpus(corpus),
-        )));
-    }
+    let mut lines = build::preamble(&lang, &participants, corpus);
 
     for (spk, text) in &turns {
-        let words: Vec<UtteranceContent> = text
+        let words = text
             .split_whitespace()
-            .map(|w| UtteranceContent::Word(Box::new(Word::simple(w))))
-            .collect();
+            .map(build::word)
+            .collect::<Result<Vec<_>, _>>()?;
 
         if words.is_empty() {
             continue;
         }
 
-        let main_tier = MainTier::new(
-            SpeakerCode::new(spk),
-            words,
-            Terminator::Period { span: Span::DUMMY },
-        );
+        let main_tier = build::main_tier(SpeakerCode::new(spk), words, build::period());
 
         lines.push(Line::utterance(Utterance::new(main_tier)));
     }
 
-    lines.push(Line::header(Header::End));
+    lines.push(build::header(Header::End));
 
     Ok(ChatFile::new(lines))
 }

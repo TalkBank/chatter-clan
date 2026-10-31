@@ -10,7 +10,7 @@ Converts PLAY (Phonological and Lexical Acquisition in Young children) annotatio
 ## Usage
 
 ```bash
-chatter clan play2chat input.play
+chatter-clan play2chat input.play
 ```
 
 ## Options
@@ -61,4 +61,4 @@ Sources: `OSX-CLAN/src/clan/Play2Chat.cpp::usage`,
 Audit summary: 1 Done (default conversion), 1 Missing. The
 overlap-check is a validation pass that chatter does not run;
 researchers wanting that check can pipe the output to
-`chatter clan check`.
+`chatter-clan check`.

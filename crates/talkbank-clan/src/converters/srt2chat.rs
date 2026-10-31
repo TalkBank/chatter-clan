@@ -26,13 +26,9 @@
 //! - All subtitle entries are assigned to a single default speaker; CLAN's
 //!   SRT2CHAT behaves similarly but may differ in speaker handling.
 
-use talkbank_model::Span;
-use talkbank_model::{
-    Bullet, ChatFile, Header, IDHeader, LanguageCode, LanguageCodes, Line, MainTier,
-    ParticipantEntries, ParticipantEntry, ParticipantRole, SpeakerCode, Terminator, Utterance,
-    UtteranceContent, Word,
-};
+use talkbank_model::{ChatFile, Header, Line, ParticipantRole, SpeakerCode, Utterance};
 
+use super::build;
 use crate::framework::TransformError;
 
 /// An SRT subtitle entry.
@@ -161,46 +157,30 @@ pub fn srt_to_chat_with_options(
 ) -> Result<ChatFile, TransformError> {
     let entries = parse_srt(content)?;
 
-    let lang = LanguageCode::new(language);
+    let lang = build::language(language)?;
     let spk = SpeakerCode::new(speaker);
     let role = ParticipantRole::new("Unidentified");
 
-    let mut lines = vec![
-        Line::header(Header::Utf8),
-        Line::header(Header::Begin),
-        Line::header(Header::Languages {
-            codes: LanguageCodes::new(vec![lang.clone()]),
-        }),
-        Line::header(Header::Participants {
-            entries: ParticipantEntries::new(vec![ParticipantEntry {
-                speaker_code: spk.clone(),
-                name: None,
-                role: role.clone(),
-            }]),
-        }),
-        Line::header(Header::ID(
-            IDHeader::new(lang.clone(), spk.clone(), role).with_corpus(corpus),
-        )),
-    ];
+    let mut lines = build::preamble(&lang, &[(spk.clone(), role)], corpus);
 
     for entry in &entries {
-        let words: Vec<UtteranceContent> = entry
+        let words = entry
             .text
             .split_whitespace()
-            .map(|w| UtteranceContent::Word(Box::new(Word::simple(w))))
-            .collect();
+            .map(build::word)
+            .collect::<Result<Vec<_>, _>>()?;
 
         if words.is_empty() {
             continue;
         }
 
-        let main_tier = MainTier::new(spk.clone(), words, Terminator::Period { span: Span::DUMMY })
-            .with_bullet(Bullet::new(entry.start_ms, entry.end_ms));
+        let main_tier = build::main_tier(spk.clone(), words, build::period())
+            .with_bullet(build::bullet(entry.start_ms, entry.end_ms));
 
         lines.push(Line::utterance(Utterance::new(main_tier)));
     }
 
-    lines.push(Line::header(Header::End));
+    lines.push(build::header(Header::End));
 
     Ok(ChatFile::new(lines))
 }

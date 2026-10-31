@@ -12,9 +12,9 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409247
 ## Usage
 
 ```bash
-chatter clan wdlen file.cha
-chatter clan wdlen --speaker CHI file.cha
-chatter clan wdlen --format json file.cha
+chatter-clan wdlen file.cha
+chatter-clan wdlen --speaker CHI file.cha
+chatter-clan wdlen --format json file.cha
 ```
 
 ## Options (chatter-native)
@@ -69,7 +69,7 @@ against chatter's coverage. Sources:
 | `+re` | Recurse | (default) | Done | |
 | `+pS` | Word delimiter |, | Missing | |
 | `+k` | Case-sensitive | `--case-sensitive` (via `CommonAnalysisArgs`) | Done (no-op per CLAN) | WDLEN does no word-keying; `+k` is silently accepted per CLAN's `cutt.cpp::mainusage` no-op semantic. Covered by `CommonAnalysisArgs.case_sensitive` flatten on `ClanCommands::Wdlen`. |
-| `+wN` / `-wN` | Context window (KWAL/COMBO keyword-context) | -- | Rewriter only | Inapplicable to WDLEN (word-length distributions, no per-match context to surround). The rewriter maps `+wN`/`-wN` to `--context-after`/`--context-before`, but WDLEN has no such clap field, so it errors at parse time, the correct outcome for an inapplicable flag (talkbank-clan/CLAUDE.md). CLAN's binary instead empties the output (a context-machinery artifact). |
+| `+wN` / `-wN` | Context window (KWAL/COMBO keyword-context) | -- | Rewriter only | Inapplicable to WDLEN (word-length distributions, no per-match context to surround). The rewriter maps `+wN`/`-wN` to `--context-after`/`--context-before`, but WDLEN has no such clap field, so it errors at parse time, the correct outcome for an inapplicable flag (talkbank-clan/AGENTS.md). CLAN's binary instead empties the output (a context-machinery artifact). |
 | `+f` / `+fEXT` | Output to file | `--output-ext` (rewriter target) | Rewriter only | Phase 1.1. |
 
 ### Audit summary

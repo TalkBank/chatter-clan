@@ -13,8 +13,8 @@
 //!
 //! | CLAN command                      | Rust equivalent                              |
 //! |-----------------------------------|----------------------------------------------|
-//! | `gem file.cha`                    | `chatter clan gem file.cha`                  |
-//! | `gem +g"story" file.cha`          | `chatter clan gem --gem story file.cha`       |
+//! | `gem file.cha`                    | `chatter-clan gem file.cha`                  |
+//! | `gem +g"story" file.cha`          | `chatter-clan gem --gem story file.cha`       |
 //!
 //! # Differences from CLAN
 //!
@@ -116,28 +116,34 @@ impl TransformCommand for GemCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use talkbank_model::Span;
-    use talkbank_model::{GemLabel, MainTier, Terminator, Utterance, UtteranceContent, Word};
+
+    use talkbank_model::{GemLabel, Utterance, UtteranceContent};
 
     fn utt_line(speaker: &str, words: &[&str]) -> Line {
         let content: Vec<UtteranceContent> = words
             .iter()
-            .map(|w| UtteranceContent::Word(Box::new(Word::simple(*w))))
+            .map(|w| UtteranceContent::Word(Box::new(crate::test_support::word(*w))))
             .collect();
-        let main = MainTier::new(speaker, content, Terminator::Period { span: Span::DUMMY });
+        let main = crate::test_support::main_tier(speaker, content);
         Line::utterance(Utterance::new(main))
     }
 
     fn bg_line(label: &str) -> Line {
-        Line::header(Header::BeginGem {
-            label: Some(GemLabel::new(label)),
-        })
+        Line::header(
+            talkbank_model::Location::Unlocated,
+            Header::BeginGem {
+                label: Some(GemLabel::try_new(label).expect("nonblank gem label fixture")),
+            },
+        )
     }
 
     fn eg_line(label: &str) -> Line {
-        Line::header(Header::EndGem {
-            label: Some(GemLabel::new(label)),
-        })
+        Line::header(
+            talkbank_model::Location::Unlocated,
+            Header::EndGem {
+                label: Some(GemLabel::try_new(label).expect("nonblank gem label fixture")),
+            },
+        )
     }
 
     #[test]

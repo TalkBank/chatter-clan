@@ -15,8 +15,8 @@ indirectly as part of the `mor *.cha` pipeline that runs `MOR`, `PREPOST`,
 ## Usage
 
 ```bash
-chatter clan postmortem --rules postmortem.cut file.cha
-chatter clan postmortem --rules rules.cut --target-tier spa file.cha
+chatter-clan postmortem --rules postmortem.cut file.cha
+chatter-clan postmortem --rules rules.cut --target-tier spa file.cha
 ```
 
 ## Options
@@ -60,7 +60,7 @@ rule-application workflow.
 ## External Data
 
 Requires a rules file. CLAN uses `postmortem.cut` from its `lib/`
-directory by default; `chatter clan postmortem` does not bundle a
+directory by default; `chatter-clan postmortem` does not bundle a
 rules file, so `--rules` must be passed explicitly. Format:
 `from_pattern => to_replacement` (one rule per line, using `=>` or
 `==>` as the separator). Lines starting with `#` or `;` are

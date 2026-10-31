@@ -10,7 +10,7 @@ Reimplements CLAN's `repeat` command, which adds a `[+ rep]` postcode to utteran
 ## Usage
 
 ```bash
-chatter clan repeat --speaker CHI file.cha
+chatter-clan repeat --speaker CHI file.cha
 ```
 
 ## Options

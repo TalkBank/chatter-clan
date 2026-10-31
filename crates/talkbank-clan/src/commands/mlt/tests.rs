@@ -1,15 +1,14 @@
 use super::*;
 use crate::framework::CommandOutput;
-use talkbank_model::Span;
-use talkbank_model::{MainTier, Terminator, UtteranceContent, Word};
+use talkbank_model::UtteranceContent;
 
 /// Build a minimal utterance with plain lexical tokens for tests.
 fn make_utterance(speaker: &str, words: &[&str]) -> Utterance {
     let content: Vec<UtteranceContent> = words
         .iter()
-        .map(|w| UtteranceContent::Word(Box::new(Word::simple(*w))))
+        .map(|w| UtteranceContent::Word(Box::new(crate::test_support::word(*w))))
         .collect();
-    let main = MainTier::new(speaker, content, Terminator::Period { span: Span::DUMMY });
+    let main = crate::test_support::main_tier(speaker, content);
     Utterance::new(main)
 }
 

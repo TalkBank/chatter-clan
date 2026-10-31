@@ -9,7 +9,7 @@
 //!
 //! | CLAN command | Rust equivalent |
 //! |---|---|
-//! | `roles +d"OLD>NEW" file.cha` | `chatter clan roles --rename "OLD=NEW" file.cha` |
+//! | `roles +d"OLD>NEW" file.cha` | `chatter-clan roles --rename "OLD=NEW" file.cha` |
 //!
 //! # Differences from CLAN
 //!
@@ -47,7 +47,7 @@ impl TransformCommand for RolesCommand {
 
 /// Rename all occurrences of a speaker code throughout the file.
 fn rename_speaker(file: &mut ChatFile, old: &str, new: &str) {
-    for line in file.lines.iter_mut() {
+    for line in file.lines.as_mut_slice().iter_mut() {
         match line {
             Line::Header { header, .. } => {
                 rename_in_header(header, old, new);
@@ -65,7 +65,7 @@ fn rename_speaker(file: &mut ChatFile, old: &str, new: &str) {
 fn rename_in_header(header: &mut Header, old: &str, new: &str) {
     match header {
         Header::Participants { entries } => {
-            for p in entries.iter_mut() {
+            for p in entries.as_mut_slice().iter_mut() {
                 if p.speaker_code.as_str() == old {
                     p.speaker_code = new.into();
                 }

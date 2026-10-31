@@ -44,13 +44,93 @@ fn analysis_options_command_name_unit_variants() {
         AnalysisCommandName::Cooccur,
     );
     assert_eq!(
-        AnalysisOptions::Chip.command_name(),
+        AnalysisOptions::Chip(ChipOptions::default()).command_name(),
         AnalysisCommandName::Chip
     );
     assert_eq!(
         AnalysisOptions::Complexity.command_name(),
         AnalysisCommandName::Complexity
     );
+}
+
+#[test]
+fn builder_validates_chip_speaker_roles_and_window() {
+    let options = ChipOptions {
+        adults: vec!["MOT".to_owned()],
+        children: vec!["CHI".to_owned()],
+        window: Some(4),
+        case_mode: crate::commands::chip::ChipCaseMode::Fold,
+        ..ChipOptions::default()
+    };
+    let plan = AnalysisRequestBuilder::new(AnalysisOptions::Chip(options))
+        .build()
+        .expect("valid CHIP options should build");
+
+    match plan {
+        AnalysisPlan::Service(AnalysisRequest::Chip(config)) => {
+            assert_eq!(config.adults()[0].as_str(), "MOT");
+            assert_eq!(config.children()[0].as_str(), "CHI");
+            assert_eq!(config.window.capacity(), 4);
+            assert_eq!(config.case_mode, crate::commands::chip::ChipCaseMode::Fold);
+        }
+        other => panic!("unexpected plan: {other:?}"),
+    }
+}
+
+#[test]
+fn builder_preserves_mlu_id_row_mode() {
+    let plan = AnalysisRequestBuilder::new(AnalysisOptions::Mlu(MluOptions {
+        output_mode: crate::commands::mlu::MluOutputMode::IdRowsCombinedFiles,
+        ..MluOptions::default()
+    }))
+    .build()
+    .expect("valid MLU options should build");
+
+    match plan {
+        AnalysisPlan::Service(AnalysisRequest::Mlu(config)) => {
+            assert_eq!(
+                config.output_mode,
+                crate::commands::mlu::MluOutputMode::IdRowsCombinedFiles
+            );
+        }
+        other => panic!("unexpected plan: {other:?}"),
+    }
+}
+
+#[test]
+fn builder_rejects_unsupported_chip_exclusion_syntax() {
+    let options = ChipOptions {
+        exclusion_patterns: vec![crate::framework::WordPattern::from("n|go")],
+        ..ChipOptions::default()
+    };
+    let result = AnalysisRequestBuilder::new(AnalysisOptions::Chip(options)).build();
+
+    assert!(matches!(
+        result,
+        Err(AnalysisServiceError::InvalidRequest(message))
+            if message.contains("unsupported CHIP -h pattern")
+    ));
+}
+
+#[test]
+fn chip_plus_k_toggles_the_preserve_case_default() {
+    assert!(AnalysisCommandName::Chip.preserves_case_by_default());
+    assert!(AnalysisCommandName::Chip.effective_case_sensitive(false));
+    assert!(!AnalysisCommandName::Chip.effective_case_sensitive(true));
+}
+
+#[test]
+fn builder_rejects_conflicting_chip_speaker_roles() {
+    let options = ChipOptions {
+        adults: vec!["CHI".to_owned()],
+        children: vec!["CHI".to_owned()],
+        ..ChipOptions::default()
+    };
+    let result = AnalysisRequestBuilder::new(AnalysisOptions::Chip(options)).build();
+    assert!(matches!(
+        result,
+        Err(AnalysisServiceError::InvalidRequest(_))
+    ));
 }
 
 #[test]

@@ -152,10 +152,7 @@ impl AnalysisCommand for MaxwdCommand {
             .or_insert_with(SpeakerMaxwd::default);
 
         // Compute line number: O(log n) via LineMap when available, else 0
-        let line_number = file_context
-            .line_map
-            .map(|lm| lm.line_of(utterance.main.span.start))
-            .unwrap_or(0);
+        let line_number = file_context.utterance_line(utterance).unwrap_or(0);
 
         let case_sensitive = self.config.case_sensitive;
         for word in countable_words(&utterance.main.content.content) {

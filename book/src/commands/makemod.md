@@ -10,7 +10,7 @@ Reimplements CLAN's MAKEMOD command, which looks up each countable word on main 
 ## Usage
 
 ```bash
-chatter clan makemod --lexicon cmulex.cut file.cha
+chatter-clan makemod --lexicon cmulex.cut file.cha
 ```
 
 ## Options
@@ -39,7 +39,7 @@ Audit summary: 2 Done (default first-only + `+a` all-alts).
 ## External Data
 
 Requires a CMU-format lexicon file. CLAN ships a `cmulex.cut` in
-its `lib/` directory and uses that by default; `chatter clan
+its `lib/` directory and uses that by default; `chatter-clan
 makemod` does not bundle a lexicon, so `--lexicon` must be passed
 explicitly.
 

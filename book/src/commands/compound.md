@@ -10,7 +10,7 @@ Reimplements CLAN's COMPOUND command, which normalizes compound word notation in
 ## Usage
 
 ```bash
-chatter clan compound file.cha
+chatter-clan compound file.cha
 ```
 
 ## Options

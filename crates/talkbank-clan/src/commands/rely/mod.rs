@@ -63,11 +63,11 @@ fn extract_tier_codes(utterance: &Utterance, tier_label: &str) -> Vec<String> {
     for dep in &utterance.dependent_tiers {
         let kind = dep.kind();
         if kind == tier_label {
-            if let talkbank_model::DependentTier::Cod(tier) = dep {
+            if let talkbank_model::DependentTier::Cod(tier) = &dep.tier {
                 codes.extend(cod_item_values(tier));
             } else {
                 codes.extend(
-                    dependent_tier_content_text(dep)
+                    dependent_tier_content_text(&dep.tier)
                         .split_whitespace()
                         .filter(|token| !token.is_empty() && *token != ".")
                         .map(str::to_owned),

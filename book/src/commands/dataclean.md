@@ -10,7 +10,7 @@ Reimplements CLAN's DataCleanUp command, which fixes spacing and formatting issu
 ## Usage
 
 ```bash
-chatter clan dataclean file.cha
+chatter-clan dataclean file.cha
 ```
 
 ## Options

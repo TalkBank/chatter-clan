@@ -1,20 +1,27 @@
 use super::*;
-use crate::framework::FileContext;
-use talkbank_model::Span;
-use talkbank_model::{MainTier, Terminator, UtteranceContent, Word};
+use crate::framework::{CommandOutput, FileContext};
+use talkbank_model::{ChatFile, Utterance, UtteranceContent};
 
-/// Build a minimal utterance with plain words for interaction tests.
-fn make_utterance(speaker: &str, words: &[&str]) -> Utterance {
-    let content: Vec<UtteranceContent> = words
-        .iter()
-        .map(|w| UtteranceContent::Word(Box::new(Word::simple(*w))))
-        .collect();
-    let main = MainTier::new(speaker, content, Terminator::Period { span: Span::DUMMY });
-    Utterance::new(main)
+fn command() -> ChipCommand {
+    let config = ChipConfig::default()
+        .with_main_tier()
+        .expect("default CHIP morphology mode is not active")
+        .with_adult(SpeakerCode::parse("MOT").expect("speaker code is valid"))
+        .expect("adult role is unique")
+        .with_child(SpeakerCode::parse("CHI").expect("speaker code is valid"))
+        .expect("child role is unique");
+    ChipCommand::new(config)
 }
 
-/// Build a stable `FileContext` fixture reused across test cases.
-fn file_ctx(chat_file: &talkbank_model::ChatFile) -> FileContext<'_> {
+fn make_utterance(speaker: &str, words: &[&str]) -> Utterance {
+    let content = words
+        .iter()
+        .map(|word| UtteranceContent::Word(Box::new(crate::test_support::word(word))))
+        .collect();
+    Utterance::new(crate::test_support::main_tier(speaker, content))
+}
+
+fn file_context(chat_file: &ChatFile) -> FileContext<'_> {
     FileContext {
         path: std::path::Path::new("test.cha"),
         chat_file,
@@ -23,172 +30,72 @@ fn file_ctx(chat_file: &talkbank_model::ChatFile) -> FileContext<'_> {
     }
 }
 
-/// Identical adjacent content across speakers should classify as exact repetition.
 #[test]
-fn chip_exact_repetition() {
-    let command = ChipCommand;
+fn scores_adult_response_to_nearest_prior_child_not_only_adjacent_speaker() {
+    let command = command();
+    let chat_file = ChatFile::new(vec![]);
+    let context = file_context(&chat_file);
     let mut state = ChipState::default();
-    let chat_file = talkbank_model::ChatFile::new(vec![]);
-    let ctx = file_ctx(&chat_file);
 
-    // MOT says "want cookie", CHI repeats "want cookie"
-    let u1 = make_utterance("MOT", &["want", "cookie"]);
-    let u2 = make_utterance("CHI", &["want", "cookie"]);
-    command.process_utterance(&u1, &ctx, &mut state);
-    command.process_utterance(&u2, &ctx, &mut state);
-    command.end_file(&ctx, &mut state);
+    for utterance in [
+        make_utterance("CHI", &["want", "cookie"]),
+        make_utterance("MOT", &["good", "job"]),
+        make_utterance("CHI", &["want", "cookie"]),
+        make_utterance("MOT", &["want", "cookie"]),
+    ] {
+        command.process_utterance(&utterance, &context, &mut state);
+    }
 
-    let pair = SpeakerPair {
-        from: "MOT".to_owned(),
-        to: "CHI".to_owned(),
-    };
-    assert_eq!(state.by_pair[&pair].exact_repetitions, 1);
-    assert_eq!(state.by_pair[&pair].overlaps, 0);
-    assert_eq!(state.by_pair[&pair].no_overlaps, 0);
+    let file = state.active_file.as_ref().expect("file was initialized");
+    assert_eq!(file.tallies.adult.responses, 1);
+    assert_eq!(file.tallies.adult.exact_match, 1);
+    assert_eq!(file.tallies.child.responses, 0);
+    assert_eq!(file.tallies.child.no_overlap, 1);
 }
 
-/// At least 50% overlap of the smaller unique-word set counts as overlap.
 #[test]
-fn chip_overlap() {
-    let command = ChipCommand;
+fn unknown_speakers_are_not_assigned_a_role_by_default() {
+    let command = ChipCommand::new(ChipConfig::default().with_main_tier().unwrap());
+    let chat_file = ChatFile::new(vec![]);
+    let context = file_context(&chat_file);
     let mut state = ChipState::default();
-    let chat_file = talkbank_model::ChatFile::new(vec![]);
-    let ctx = file_ctx(&chat_file);
 
-    // MOT says "I want cookie", CHI says "want cookie please"
-    // Shared: "want", "cookie" (2 of 3 unique words in shorter) → ≥50%
-    let u1 = make_utterance("MOT", &["I", "want", "cookie"]);
-    let u2 = make_utterance("CHI", &["want", "cookie", "please"]);
-    command.process_utterance(&u1, &ctx, &mut state);
-    command.process_utterance(&u2, &ctx, &mut state);
-    command.end_file(&ctx, &mut state);
+    for utterance in [
+        make_utterance("MOT", &["hello"]),
+        make_utterance("CHI", &["hello"]),
+    ] {
+        command.process_utterance(&utterance, &context, &mut state);
+    }
 
-    let pair = SpeakerPair {
-        from: "MOT".to_owned(),
-        to: "CHI".to_owned(),
-    };
-    assert_eq!(state.by_pair[&pair].exact_repetitions, 0);
-    assert_eq!(state.by_pair[&pair].overlaps, 1);
+    let file = state.active_file.as_ref().expect("file was initialized");
+    assert_eq!(file.tallies.adult.responses, 0);
+    assert_eq!(file.tallies.child.responses, 0);
+    assert_eq!(file.tallies.adult.utters, 0);
+    assert_eq!(file.tallies.child.utters, 0);
 }
 
-/// Disjoint vocabularies should classify as no-overlap.
 #[test]
-fn chip_no_overlap() {
-    let command = ChipCommand;
+fn ending_a_file_produces_a_matrix_and_echoes_typed_chat() {
+    let command = command();
+    let chat_file = ChatFile::new(vec![]);
+    let context = file_context(&chat_file);
     let mut state = ChipState::default();
-    let chat_file = talkbank_model::ChatFile::new(vec![]);
-    let ctx = file_ctx(&chat_file);
 
-    // MOT: "look at the dog", CHI: "I want milk"
-    // No shared words
-    let u1 = make_utterance("MOT", &["look", "at", "the", "dog"]);
-    let u2 = make_utterance("CHI", &["I", "want", "milk"]);
-    command.process_utterance(&u1, &ctx, &mut state);
-    command.process_utterance(&u2, &ctx, &mut state);
-    command.end_file(&ctx, &mut state);
+    command.process_utterance(&make_utterance("CHI", &["want"]), &context, &mut state);
+    command.process_utterance(&make_utterance("MOT", &["want"]), &context, &mut state);
+    command.end_file(&context, &mut state);
 
-    let pair = SpeakerPair {
-        from: "MOT".to_owned(),
-        to: "CHI".to_owned(),
-    };
-    assert_eq!(state.by_pair[&pair].no_overlaps, 1);
-}
-
-/// Consecutive utterances by the same speaker should not create an interaction edge.
-#[test]
-fn chip_same_speaker_no_interaction() {
-    let command = ChipCommand;
-    let mut state = ChipState::default();
-    let chat_file = talkbank_model::ChatFile::new(vec![]);
-    let ctx = file_ctx(&chat_file);
-
-    // Two consecutive utterances by same speaker, no interaction counted
-    let u1 = make_utterance("CHI", &["hello"]);
-    let u2 = make_utterance("CHI", &["hello"]);
-    command.process_utterance(&u1, &ctx, &mut state);
-    command.process_utterance(&u2, &ctx, &mut state);
-    command.end_file(&ctx, &mut state);
-
-    assert!(state.by_pair.is_empty());
-}
-
-/// The state machine should track multiple directed interactions in one file.
-#[test]
-fn chip_multiple_interactions() {
-    let command = ChipCommand;
-    let mut state = ChipState::default();
-    let chat_file = talkbank_model::ChatFile::new(vec![]);
-    let ctx = file_ctx(&chat_file);
-
-    let u1 = make_utterance("MOT", &["want", "cookie"]);
-    let u2 = make_utterance("CHI", &["want", "cookie"]); // exact
-    let u3 = make_utterance("MOT", &["good", "job"]);
-    let u4 = make_utterance("CHI", &["more", "cookie"]); // no overlap with "good job"
-
-    command.process_utterance(&u1, &ctx, &mut state);
-    command.process_utterance(&u2, &ctx, &mut state);
-    command.process_utterance(&u3, &ctx, &mut state);
-    command.process_utterance(&u4, &ctx, &mut state);
-    command.end_file(&ctx, &mut state);
-
-    let mot_to_chi = SpeakerPair {
-        from: "MOT".to_owned(),
-        to: "CHI".to_owned(),
-    };
-    assert_eq!(state.by_pair[&mot_to_chi].exact_repetitions, 1);
-    assert_eq!(state.by_pair[&mot_to_chi].no_overlaps, 1);
-
-    // CHI → MOT: "want cookie" → "good job" = no overlap
-    let chi_to_mot = SpeakerPair {
-        from: "CHI".to_owned(),
-        to: "MOT".to_owned(),
-    };
-    assert_eq!(state.by_pair[&chi_to_mot].no_overlaps, 1);
-}
-
-/// Finalizing untouched state should produce an empty result.
-#[test]
-fn chip_empty_state() {
-    let command = ChipCommand;
-    let state = ChipState::default();
     let result = command.finalize(state);
-    assert!(result.pairs.is_empty());
+    let [report] = result.files.as_slice() else {
+        panic!("one input file should produce one report");
+    };
+    assert!(matches!(report.status, ChipFileStatus::Scored(_)));
+    assert!(report.transcript.contains("*CHI:"));
+    assert!(report.transcript.contains("%adu:"));
+    assert!(result.render_clan().contains("File: test.cha"));
 }
 
-/// Word order differences alone should still be exact repetition.
 #[test]
-fn classify_interaction_exact() {
-    assert_eq!(
-        classify_interaction(
-            &["want".to_owned(), "cookie".to_owned()],
-            &["cookie".to_owned(), "want".to_owned()],
-        ),
-        Interaction::ExactRepetition
-    );
-}
-
-/// Exactly 50% overlap should take the overlap branch.
-#[test]
-fn classify_interaction_overlap_threshold() {
-    // 1 of 2 unique words shared = 50% → overlap
-    assert_eq!(
-        classify_interaction(
-            &["want".to_owned(), "cookie".to_owned()],
-            &["want".to_owned(), "milk".to_owned()],
-        ),
-        Interaction::Overlap
-    );
-}
-
-/// Zero shared vocabulary should take the no-overlap branch.
-#[test]
-fn classify_interaction_no_overlap() {
-    // 0 of 2 shared → no overlap
-    assert_eq!(
-        classify_interaction(
-            &["hello".to_owned(), "world".to_owned()],
-            &["goodbye".to_owned(), "moon".to_owned()],
-        ),
-        Interaction::NoOverlap
-    );
+fn empty_invocation_produces_no_file_reports() {
+    assert!(command().finalize(ChipState::default()).files.is_empty());
 }

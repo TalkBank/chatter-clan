@@ -92,7 +92,7 @@ impl AnalysisCommand for CodesCommand {
         let speaker = utterance.main.speaker.to_string();
 
         for dep in &utterance.dependent_tiers {
-            if let DependentTier::Cod(tier) = dep {
+            if let DependentTier::Cod(tier) = &dep.tier {
                 let speaker_codes = state.speakers.entry(speaker.clone()).or_default();
                 for code in cod_item_values(tier) {
                     *speaker_codes.entry(code).or_insert(0) += 1;

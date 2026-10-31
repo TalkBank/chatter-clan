@@ -34,13 +34,12 @@ use std::collections::BTreeMap;
 
 use quick_xml::Reader;
 use quick_xml::events::Event;
-use talkbank_model::Span;
 use talkbank_model::{
-    Bullet, ChatFile, Header, IDHeader, LanguageCode, LanguageCodes, Line, MainTier,
-    ParticipantEntries, ParticipantEntry, ParticipantRole, SpeakerCode, Terminator, Utterance,
-    UtteranceContent, Word,
+    ChatFile, Header, IDHeader, LanguageCodes, Line, ParticipantEntries, ParticipantEntry,
+    ParticipantRole, SpeakerCode, Utterance,
 };
 
+use super::build;
 use crate::framework::TransformError;
 
 /// An annotation from an ELAN tier.
@@ -82,12 +81,12 @@ fn parse_elan(content: &str) -> Result<Vec<ElanTier>, TransformError> {
         match reader.read_event() {
             Ok(Event::Start(ref e) | Event::Empty(ref e)) => {
                 match e.name().as_ref() {
-                    b"TIME_SLOT" => {
+                    "TIME_SLOT" => {
                         let mut slot_id = None;
                         let mut slot_value = None;
                         for attr in e.attributes().flatten() {
                             match attr.key.as_ref() {
-                                b"TIME_SLOT_ID" => {
+                                "TIME_SLOT_ID" => {
                                     slot_id = Some(
                                         attr.unescape_value()
                                             .map_err(|err| {
@@ -98,7 +97,7 @@ fn parse_elan(content: &str) -> Result<Vec<ElanTier>, TransformError> {
                                             .into_owned(),
                                     );
                                 }
-                                b"TIME_VALUE" => {
+                                "TIME_VALUE" => {
                                     slot_value = Some(
                                         attr.unescape_value()
                                             .map_err(|err| {
@@ -118,7 +117,7 @@ fn parse_elan(content: &str) -> Result<Vec<ElanTier>, TransformError> {
                             time_slots.insert(id, ms);
                         }
                     }
-                    b"TIER" => {
+                    "TIER" => {
                         // Flush previous tier
                         if let Some(tid) = current_tier_id.take()
                             && !current_annotations.is_empty()
@@ -130,7 +129,7 @@ fn parse_elan(content: &str) -> Result<Vec<ElanTier>, TransformError> {
                         }
                         let mut tier_id = "SPK".to_owned();
                         for attr in e.attributes().flatten() {
-                            if attr.key.as_ref() == b"TIER_ID" {
+                            if attr.key.as_ref() == "TIER_ID" {
                                 tier_id = attr
                                     .unescape_value()
                                     .map_err(|err| {
@@ -141,16 +140,16 @@ fn parse_elan(content: &str) -> Result<Vec<ElanTier>, TransformError> {
                         }
                         current_tier_id = Some(tier_id);
                     }
-                    b"ALIGNABLE_ANNOTATION" => {
+                    "ALIGNABLE_ANNOTATION" => {
                         current_ts1.clear();
                         current_ts2.clear();
                         for attr in e.attributes().flatten() {
                             match attr.key.as_ref() {
-                                b"TIME_SLOT_REF1" => {
+                                "TIME_SLOT_REF1" => {
                                     current_ts1 =
                                         attr.unescape_value().unwrap_or_default().into_owned();
                                 }
-                                b"TIME_SLOT_REF2" => {
+                                "TIME_SLOT_REF2" => {
                                     current_ts2 =
                                         attr.unescape_value().unwrap_or_default().into_owned();
                                 }
@@ -158,7 +157,7 @@ fn parse_elan(content: &str) -> Result<Vec<ElanTier>, TransformError> {
                             }
                         }
                     }
-                    b"ANNOTATION_VALUE" => {
+                    "ANNOTATION_VALUE" => {
                         in_annotation_value = true;
                         annotation_text.clear();
                     }
@@ -166,29 +165,39 @@ fn parse_elan(content: &str) -> Result<Vec<ElanTier>, TransformError> {
                 }
             }
             Ok(Event::Text(e)) if in_annotation_value => {
-                // quick-xml 0.40 split `xml_content()` into version-keyed
-                // variants. ELAN's `.eaf` files are XML 1.0 (declared in
-                // their `<?xml version="1.0" …?>` header), so the 1.0
-                // shortcut preserves prior behaviour byte-for-byte.
-                let decoded = e.xml10_content().map_err(|err| {
-                    TransformError::Parse(format!("Invalid ANNOTATION_VALUE text: {err}"))
-                })?;
-                annotation_text.push_str(&decoded);
+                // ELAN's `.eaf` files are XML 1.0 (declared in their
+                // `<?xml version="1.0" …?>` header).
+                annotation_text.push_str(&e.xml10_content());
             }
             Ok(Event::GeneralRef(e)) if in_annotation_value => {
-                let name = std::str::from_utf8(&e).unwrap_or("");
-                let resolved = match name {
-                    "amp" => "&",
-                    "lt" => "<",
-                    "gt" => ">",
-                    "apos" => "'",
-                    "quot" => "\"",
-                    _ => "",
-                };
-                annotation_text.push_str(resolved);
+                if e.is_char_ref() {
+                    let resolved = e
+                        .resolve_char_ref()
+                        .map_err(|err| {
+                            TransformError::Parse(format!("Invalid character reference: {err}"))
+                        })?
+                        .ok_or_else(|| {
+                            TransformError::Parse("Empty character reference".to_owned())
+                        })?;
+                    annotation_text.push(resolved);
+                } else {
+                    let resolved = match &*e {
+                        "amp" => "&",
+                        "lt" => "<",
+                        "gt" => ">",
+                        "apos" => "'",
+                        "quot" => "\"",
+                        other => {
+                            return Err(TransformError::Parse(format!(
+                                "Unknown XML entity &{other}; in ANNOTATION_VALUE"
+                            )));
+                        }
+                    };
+                    annotation_text.push_str(resolved);
+                }
             }
             Ok(Event::End(ref e)) => match e.name().as_ref() {
-                b"ANNOTATION_VALUE" => {
+                "ANNOTATION_VALUE" => {
                     in_annotation_value = false;
                     if !annotation_text.is_empty() {
                         let start_ms = time_slots.get(&current_ts1).copied().unwrap_or(0);
@@ -200,7 +209,7 @@ fn parse_elan(content: &str) -> Result<Vec<ElanTier>, TransformError> {
                         });
                     }
                 }
-                b"TIER" => {
+                "TIER" => {
                     if let Some(tid) = current_tier_id.take()
                         && !current_annotations.is_empty()
                     {
@@ -250,7 +259,7 @@ pub fn elan_to_chat_with_options(
     corpus: &str,
 ) -> Result<ChatFile, TransformError> {
     let tiers = parse_elan(content)?;
-    let lang = LanguageCode::new(language);
+    let lang = build::language(language)?;
 
     let speakers: Vec<SpeakerCode> = tiers
         .iter()
@@ -262,33 +271,38 @@ pub fn elan_to_chat_with_options(
 
     let participant_entries: Vec<ParticipantEntry> = speakers
         .iter()
-        .map(|code| ParticipantEntry {
-            speaker_code: code.clone(),
-            name: None,
-            role: ParticipantRole::new("Unidentified"),
-        })
+        .map(|code| build::participant(code.clone(), ParticipantRole::new("Unidentified")))
         .collect();
 
     let mut lines = vec![
-        Line::header(Header::Utf8),
-        Line::header(Header::Begin),
-        Line::header(Header::Languages {
-            codes: LanguageCodes::new(vec![lang.clone()]),
-        }),
-        Line::header(Header::Participants {
-            entries: ParticipantEntries::new(participant_entries),
-        }),
+        Line::header(talkbank_model::Location::Unlocated, Header::Utf8),
+        Line::header(talkbank_model::Location::Unlocated, Header::Begin),
+        Line::header(
+            talkbank_model::Location::Unlocated,
+            Header::Languages {
+                codes: LanguageCodes::new(vec![lang.clone()]),
+            },
+        ),
+        Line::header(
+            talkbank_model::Location::Unlocated,
+            Header::Participants {
+                entries: ParticipantEntries::new(participant_entries),
+            },
+        ),
     ];
 
     for spk in &speakers {
-        lines.push(Line::header(Header::ID(
-            IDHeader::new(
-                lang.clone(),
-                spk.clone(),
-                ParticipantRole::new("Unidentified"),
-            )
-            .with_corpus(corpus),
-        )));
+        lines.push(Line::header(
+            talkbank_model::Location::Unlocated,
+            Header::ID(
+                IDHeader::new(
+                    lang.clone(),
+                    spk.clone(),
+                    ParticipantRole::new("Unidentified"),
+                )
+                .with_corpus(corpus),
+            ),
+        ));
     }
 
     // Merge all annotations, sorted by start time
@@ -301,23 +315,23 @@ pub fn elan_to_chat_with_options(
     all_annotations.sort_by_key(|(_, ann)| ann.start_ms);
 
     for (spk, ann) in &all_annotations {
-        let words: Vec<UtteranceContent> = ann
+        let words = ann
             .text
             .split_whitespace()
-            .map(|w| UtteranceContent::Word(Box::new(Word::simple(w))))
-            .collect();
+            .map(build::word)
+            .collect::<Result<Vec<_>, _>>()?;
 
         if words.is_empty() {
             continue;
         }
 
-        let main_tier = MainTier::new(spk.clone(), words, Terminator::Period { span: Span::DUMMY })
-            .with_bullet(Bullet::new(ann.start_ms, ann.end_ms));
+        let main_tier = build::main_tier(spk.clone(), words, build::period())
+            .with_bullet(build::bullet(ann.start_ms, ann.end_ms));
 
         lines.push(Line::utterance(Utterance::new(main_tier)));
     }
 
-    lines.push(Line::header(Header::End));
+    lines.push(build::header(Header::End));
 
     Ok(ChatFile::new(lines))
 }

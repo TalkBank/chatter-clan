@@ -9,14 +9,14 @@ formatting, bracket matching, bullet consistency, speaker declarations, and more
 ## Usage
 
 ```bash
-chatter clan check file.cha
-chatter clan check +c0 file.cha          # Full bullet check
-chatter clan check +e file.cha           # List all error numbers
-chatter clan check +e6 file.cha          # Only report error 6
-chatter clan check -e6 file.cha          # Exclude error 6
-chatter clan check +g2 file.cha          # Check CHI has Target_Child
-chatter clan check +g5 file.cha          # Check for unused speakers
-chatter clan check +u file.cha           # Check UD features on %mor
+chatter-clan check file.cha
+chatter-clan check +c0 file.cha          # Full bullet check
+chatter-clan check +e file.cha           # List all error numbers
+chatter-clan check +e6 file.cha          # Only report error 6
+chatter-clan check -e6 file.cha          # Exclude error 6
+chatter-clan check +g2 file.cha          # Check CHI has Target_Child
+chatter-clan check +g5 file.cha          # Check for unused speakers
+chatter-clan check +u file.cha           # Check UD features on %mor
 ```
 
 ## Options

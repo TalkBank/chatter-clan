@@ -1,11 +1,12 @@
 # CLAN Parity Roadmap
 
-**Status:** Current
-**Last modified:** 2026-06-15 12:23 EDT
+**Status:** Historical snapshot; re-baseline pending
+**Last modified:** 2026-10-31
 
-Planning doc for the remaining CLAN flag-parity work. Source of truth
-for "how much is left" so future sessions don't have to re-derive it
-from the per-command audit tables.
+Historical planning snapshot for CLAN flag-parity work, last counted on
+2026-06-15. Its totals and tier assignments predate the project's October
+resumption and subsequent changes; they are not a current work inventory.
+Reconcile against current per-command audits before using them to plan work.
 
 > **Byte-parity authority.** This page counts *flag-implementation* progress
 > (does a flag have a consuming field, does it behave on the common case). It
@@ -15,7 +16,7 @@ from the per-command audit tables.
 > [Parity Status](../parity-status.md), and per that page no command yet
 > achieves byte-for-byte parity.
 
-## Headline numbers
+## Historical headline numbers (2026-06-15)
 
 Counted from the Audit-summary tables in every
 `book/src/clan-reference/commands/*.md` (80 command pages). See
@@ -69,7 +70,7 @@ that produce alternate output shapes for the same analysis; some are
 inherited from the `cutt.cpp::mainusage` general flag set and act as
 no-ops on commands that don't semantically use them. A handful are
 genuinely domain-heavy linguistic features (FLUCALC syllable mode,
-IPSYN rules, CHIP partner-child tagging) that need PI input on
+IPSYN rules) that need PI input on
 semantics before they can be implemented.
 
 ## Tier breakdown
@@ -172,7 +173,7 @@ models. Multi-week per command if implemented end-to-end.
 | FLUCALC | Syllable-vs-word mode, side-effect files, pause computation, repetition counting | 1-2 weeks |
 | IPSYN | Rule customization, custom-pattern files | 1-2 weeks |
 | DSS | Rule customization | 1-2 weeks |
-| CHIP | Adult/child speaker-role tagging, substitution coding | 1-2 weeks |
+| CHIP | `+dN` display modes and option-specific parity evidence; `-hFILE` supports exact and `*` patterns; see [CHIP status](../commands/chip.md) | 1-2 weeks |
 | COMPLEXITY | Complexity-specific metrics | ~1 week |
 | KIDEVAL | Database modifications, output extensions | 1-2 weeks |
 | COREELEX | Threshold/comparison modes | ~1 week |

@@ -97,7 +97,14 @@ impl AnalysisCommand for TimedurCommand {
             state.seen_speakers.push(speaker_str.to_owned());
         }
 
-        let Some(ref bullet) = utterance.main.content.bullet else {
+        // A rejected (unparsed) bullet carries no timing, so it counts as untimed.
+        let Some(bullet) = utterance
+            .main
+            .content
+            .bullet
+            .as_ref()
+            .and_then(talkbank_model::BulletState::as_parsed)
+        else {
             return;
         };
 

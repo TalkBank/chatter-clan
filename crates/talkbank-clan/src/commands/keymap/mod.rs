@@ -109,11 +109,11 @@ impl AnalysisCommand for KeymapCommand {
         let mut codes: Vec<String> = Vec::new();
         for dep in &utterance.dependent_tiers {
             if self.config.tier == dep.kind() {
-                if let talkbank_model::DependentTier::Cod(tier) = dep {
+                if let talkbank_model::DependentTier::Cod(tier) = &dep.tier {
                     codes.extend(cod_item_values(tier));
                 } else {
                     codes.extend(
-                        dependent_tier_content_text(dep)
+                        dependent_tier_content_text(&dep.tier)
                             .split_whitespace()
                             .filter(|token| !token.is_empty() && *token != ".")
                             .map(str::to_owned),

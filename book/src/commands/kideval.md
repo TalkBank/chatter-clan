@@ -12,10 +12,10 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409281
 ## Usage
 
 ```bash
-chatter clan kideval file.cha
-chatter clan kideval --speaker CHI file.cha
-chatter clan kideval --format json file.cha
-chatter clan kideval --dss-rules english.scr file.cha
+chatter-clan kideval file.cha
+chatter-clan kideval --speaker CHI file.cha
+chatter-clan kideval --format json file.cha
+chatter-clan kideval --dss-rules english.scr file.cha
 ```
 
 ## Options (chatter-native)

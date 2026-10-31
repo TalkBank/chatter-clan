@@ -102,12 +102,12 @@ fn count_disfluencies_content(
     for item in content {
         match item {
             UtteranceContent::Word(word) => {
-                count_word(word.raw_text(), word.category.as_ref(), fluency, prev_word);
+                count_word(&word.raw_text(), word.category.as_ref(), fluency, prev_word);
             }
             UtteranceContent::AnnotatedWord(annotated) => {
                 count_scoped_annotations(&annotated.scoped_annotations, fluency);
                 count_word(
-                    annotated.inner.raw_text(),
+                    &annotated.inner.raw_text(),
                     annotated.inner.category.as_ref(),
                     fluency,
                     prev_word,
@@ -116,7 +116,7 @@ fn count_disfluencies_content(
             UtteranceContent::ReplacedWord(replaced) => {
                 count_scoped_annotations(&replaced.scoped_annotations, fluency);
                 count_word(
-                    replaced.word.raw_text(),
+                    &replaced.word.raw_text(),
                     replaced.word.category.as_ref(),
                     fluency,
                     prev_word,
@@ -155,12 +155,12 @@ fn count_disfluencies_bracketed(
     for item in items {
         match item {
             BracketedItem::Word(word) => {
-                count_word(word.raw_text(), word.category.as_ref(), fluency, prev_word);
+                count_word(&word.raw_text(), word.category.as_ref(), fluency, prev_word);
             }
             BracketedItem::AnnotatedWord(annotated) => {
                 count_scoped_annotations(&annotated.scoped_annotations, fluency);
                 count_word(
-                    annotated.inner.raw_text(),
+                    &annotated.inner.raw_text(),
                     annotated.inner.category.as_ref(),
                     fluency,
                     prev_word,
@@ -169,7 +169,7 @@ fn count_disfluencies_bracketed(
             BracketedItem::ReplacedWord(replaced) => {
                 count_scoped_annotations(&replaced.scoped_annotations, fluency);
                 count_word(
-                    replaced.word.raw_text(),
+                    &replaced.word.raw_text(),
                     replaced.word.category.as_ref(),
                     fluency,
                     prev_word,

@@ -119,7 +119,7 @@ pub fn clan_display_form(word: &Word) -> String {
 ///
 /// Used by FREQ which displays words in their original casing.
 pub fn clan_display_form_preserve_case(word: &Word) -> String {
-    strip_overlap_markers(word.raw_text())
+    strip_overlap_markers(&word.raw_text())
 }
 
 /// CLAN `+r1`/`+r2`/`+r3` (`Parans` 1/2/3, `cutt.cpp:9530-9583`; manual §14.5):
@@ -194,7 +194,8 @@ fn render_word_element(
             }
         }
         // Always stripped from the counted word form (CLAN's default and `+r7`).
-        WordContent::StressMarker(_)
+        WordContent::Phonetic(_)
+        | WordContent::StressMarker(_)
         | WordContent::CAElement(_)
         | WordContent::CADelimiter(_)
         | WordContent::UnderlineBegin(_)
@@ -206,7 +207,7 @@ fn render_word_element(
 /// Whether `word` contains any omitted-material shortening, the only content the
 /// parenthesis mode affects. Words without one take the unchanged display path.
 fn has_shortening(word: &Word) -> bool {
-    word.content
+    word.content()
         .iter()
         .any(|item| matches!(item, WordContent::Shortening(_)))
 }
@@ -232,7 +233,7 @@ fn write_shortening(out: &mut String, text: &str, mode: ParenthesisMode) {
 /// `Word::cleaned_text()`.
 fn parans_key_surface(word: &Word, parens: ParenthesisMode, prosody: ProsodyMode) -> String {
     let mut out = String::new();
-    for item in &word.content {
+    for item in word.content() {
         render_word_element(&mut out, item, parens, prosody, false);
     }
     out
@@ -247,7 +248,7 @@ fn parans_key_surface(word: &Word, parens: ParenthesisMode, prosody: ProsodyMode
 /// the `raw_text`-based [`clan_display_form`].
 fn parans_display_surface(word: &Word, parens: ParenthesisMode, prosody: ProsodyMode) -> String {
     let mut out = String::new();
-    for item in &word.content {
+    for item in word.content() {
         render_word_element(&mut out, item, parens, prosody, true);
     }
     out
@@ -260,7 +261,7 @@ fn parans_display_surface(word: &Word, parens: ParenthesisMode, prosody: Prosody
 /// display path in [`parans_display`]; all others keep the byte-identical
 /// `raw_text`-based path, so the strip is scoped to exactly the affected words.
 fn has_prosodic(word: &Word) -> bool {
-    word.content.iter().any(|item| {
+    word.content().iter().any(|item| {
         matches!(
             item,
             WordContent::CAElement(_)
@@ -363,7 +364,7 @@ mod tests {
     /// Construction from `Word` should lowercase and clean CHAT markup.
     #[test]
     fn normalized_word_lowercases() {
-        let word = Word::simple("HELLO");
+        let word = crate::test_support::word("HELLO");
         let nw = NormalizedWord::from_word(&word);
         assert_eq!(nw.as_str(), "hello");
     }
@@ -389,9 +390,13 @@ mod tests {
     /// Build `bein(g)`: `Text("bein")` + `Shortening("g")`.
     fn bein_g() -> Word {
         use talkbank_model::{WordShortening, WordText};
-        Word::new_unchecked("bein(g)", "being").with_content(vec![
-            WordContent::Text(WordText::new_unchecked("bein")),
-            WordContent::Shortening(WordShortening::new_unchecked("g")),
+        Word::new(
+            talkbank_model::Location::Unlocated,
+            WordText::new("bein").unwrap(),
+        )
+        .with_content(vec![
+            WordContent::Text(WordText::new("bein").unwrap()),
+            WordContent::Shortening(WordShortening::new("g").unwrap()),
         ])
     }
 

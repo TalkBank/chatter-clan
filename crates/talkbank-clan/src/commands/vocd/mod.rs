@@ -291,8 +291,8 @@ fn test_file_context() -> FileContext<'static> {
 #[cfg(test)]
 mod state_tests {
     use super::*;
-    use talkbank_model::Span;
-    use talkbank_model::{MainTier, Terminator, Utterance, UtteranceContent, Word};
+
+    use talkbank_model::{Utterance, UtteranceContent};
 
     /// `+c1` (`CapitalizationFilter::MidUpper`) keeps only words
     /// with an uppercase letter past position 0 in the VOCD token
@@ -311,9 +311,9 @@ mod state_tests {
 
         let content: Vec<UtteranceContent> = ["I", "Cookie", "McDonald", "iPhone"]
             .iter()
-            .map(|w| UtteranceContent::Word(Box::new(Word::simple(*w))))
+            .map(|w| UtteranceContent::Word(Box::new(crate::test_support::word(*w))))
             .collect();
-        let main = MainTier::new("CHI", content, Terminator::Period { span: Span::DUMMY });
+        let main = crate::test_support::main_tier("CHI", content);
         let utt = Utterance::new(main);
         cmd.process_utterance(&utt, &file_ctx, &mut state);
 
@@ -340,9 +340,9 @@ mod state_tests {
 
         let content: Vec<UtteranceContent> = ["I", "want", "a", "Cookie", "and"]
             .iter()
-            .map(|w| UtteranceContent::Word(Box::new(Word::simple(*w))))
+            .map(|w| UtteranceContent::Word(Box::new(crate::test_support::word(*w))))
             .collect();
-        let main = MainTier::new("CHI", content, Terminator::Period { span: Span::DUMMY });
+        let main = crate::test_support::main_tier("CHI", content);
         let utt = Utterance::new(main);
         cmd.process_utterance(&utt, &file_ctx, &mut state);
 
@@ -363,9 +363,9 @@ mod state_tests {
 
         let content: Vec<UtteranceContent> = ["Want", "want", "WANT"]
             .iter()
-            .map(|w| UtteranceContent::Word(Box::new(Word::simple(*w))))
+            .map(|w| UtteranceContent::Word(Box::new(crate::test_support::word(*w))))
             .collect();
-        let main = MainTier::new("CHI", content, Terminator::Period { span: Span::DUMMY });
+        let main = crate::test_support::main_tier("CHI", content);
         let utt = Utterance::new(main);
         cmd.process_utterance(&utt, &file_ctx, &mut state);
 
@@ -389,9 +389,9 @@ mod state_tests {
 
         let content: Vec<UtteranceContent> = ["Want", "want", "WANT"]
             .iter()
-            .map(|w| UtteranceContent::Word(Box::new(Word::simple(*w))))
+            .map(|w| UtteranceContent::Word(Box::new(crate::test_support::word(*w))))
             .collect();
-        let main = MainTier::new("CHI", content, Terminator::Period { span: Span::DUMMY });
+        let main = crate::test_support::main_tier("CHI", content);
         let utt = Utterance::new(main);
         cmd.process_utterance(&utt, &file_ctx, &mut state);
 

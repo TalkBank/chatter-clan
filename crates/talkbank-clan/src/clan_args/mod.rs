@@ -157,7 +157,7 @@ impl ClanSubcommandKind {
 ///
 /// Handles the legacy `+flag` / `-flag` syntax → `--flag` translation, plus
 /// the per-subcommand aliasing required when a single CLAN flag flips chatter's
-/// output into a sibling subcommand. Used by the `chatter clan <cmd>`
+/// output into a sibling subcommand. Used by the `chatter-clan <cmd>`
 /// dispatcher before clap parses the rewritten argv.
 pub fn rewrite_clan_args(args: &[String]) -> Vec<String> {
     // Pre-pass: handle "CLAN unifies, chatter splits" subcommand

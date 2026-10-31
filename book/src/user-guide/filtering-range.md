@@ -6,8 +6,8 @@ Range filters restrict analysis to a numbered subset of utterances, useful for a
 ## Usage
 
 ```bash
-chatter clan freq --range 10-50 file.cha
-chatter clan mlu --range 1-100 file.cha
+chatter-clan freq --range 10-50 file.cha
+chatter-clan mlu --range 1-100 file.cha
 ```
 
 CLAN equivalent: `+z10-50`
@@ -24,7 +24,7 @@ CLAN equivalent: `+z10-50`
 To analyze from a point to the end of the file, use a large upper bound:
 
 ```bash
-chatter clan freq --range 50-9999 file.cha
+chatter-clan freq --range 50-9999 file.cha
 ```
 
 ## Combining with other filters
@@ -33,5 +33,5 @@ Range composites with all other filters:
 
 ```bash
 # First 50 CHI utterances within a gem segment
-chatter clan mlu --speaker CHI --range 1-50 --gem "story" file.cha
+chatter-clan mlu --speaker CHI --range 1-50 --gem "story" file.cha
 ```

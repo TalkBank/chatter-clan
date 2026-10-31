@@ -14,11 +14,11 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409286
 > **Note on `-f` short flag.** Both `--script` and `--format`
 > declare `-f` as their short flag in
 > `crates/talkbank-cli/src/cli/args/clan_commands.rs:260` and
-> `:345`. clap currently accepts this, `chatter clan mortable
+> `:345`. clap currently accepts this, `chatter-clan mortable
 > --help` runs successfully and `-f test.cut` resolves to
 > `--script`, so the previous warning that the command was
 > "unusable" no longer applies. Verified 2026-05-12 by invoking
-> `chatter clan mortable --help` and `chatter clan mortable -f
+> `chatter-clan mortable --help` and `chatter-clan mortable -f
 > test.cut file.cha`. Prefer the long form `--script` /
 > `--format` in scripts to avoid ambiguity in future clap
 > upgrades.
@@ -26,8 +26,8 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409286
 ## Usage
 
 ```bash
-chatter clan mortable --script eng.cut file.cha
-chatter clan mortable --script eng.cut --speaker CHI file.cha
+chatter-clan mortable --script eng.cut file.cha
+chatter-clan mortable --script eng.cut --speaker CHI file.cha
 ```
 
 ## Options (chatter-native)

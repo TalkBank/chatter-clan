@@ -31,12 +31,9 @@
 //! - Speaker mapping from SALT codes to CHAT codes uses a fixed table
 //!   rather than interactive prompts.
 
-use talkbank_model::Span;
-use talkbank_model::{
-    ChatFile, Header, IDHeader, LanguageCode, LanguageCodes, Line, MainTier, ParticipantEntries,
-    ParticipantEntry, ParticipantRole, SpeakerCode, Terminator, Utterance, UtteranceContent, Word,
-};
+use talkbank_model::{ChatFile, Header, Line, ParticipantRole, SpeakerCode, Utterance};
 
+use super::build;
 use crate::framework::TransformError;
 
 /// A parsed SALT header.
@@ -202,7 +199,7 @@ pub fn salt_to_chat_with_options(
     let _header = parse_salt_header(content);
     let utterances = parse_salt_utterances(content);
 
-    let lang = LanguageCode::new(language);
+    let lang = build::language(language)?;
 
     // Collect unique CHAT speakers
     let mut speaker_set: Vec<String> = Vec::new();
@@ -216,7 +213,7 @@ pub fn salt_to_chat_with_options(
         speaker_set.push("CHI".to_owned());
     }
 
-    let participant_entries: Vec<ParticipantEntry> = speaker_set
+    let participants: Vec<(SpeakerCode, ParticipantRole)> = speaker_set
         .iter()
         .map(|s| {
             let role = match s.as_str() {
@@ -224,64 +221,30 @@ pub fn salt_to_chat_with_options(
                 "EXA" => "Investigator",
                 _ => "Unidentified",
             };
-            ParticipantEntry {
-                speaker_code: SpeakerCode::new(s),
-                name: None,
-                role: ParticipantRole::new(role),
-            }
+            (SpeakerCode::new(s), ParticipantRole::new(role))
         })
         .collect();
-
-    let mut lines = vec![
-        Line::header(Header::Utf8),
-        Line::header(Header::Begin),
-        Line::header(Header::Languages {
-            codes: LanguageCodes::new(vec![lang.clone()]),
-        }),
-        Line::header(Header::Participants {
-            entries: ParticipantEntries::new(participant_entries),
-        }),
-    ];
-
-    for s in &speaker_set {
-        let role = match s.as_str() {
-            "CHI" => "Target_Child",
-            "EXA" => "Investigator",
-            _ => "Unidentified",
-        };
-        lines.push(Line::header(Header::ID(
-            IDHeader::new(
-                lang.clone(),
-                SpeakerCode::new(s),
-                ParticipantRole::new(role),
-            )
-            .with_corpus(corpus),
-        )));
-    }
+    let mut lines = build::preamble(&lang, &participants, corpus);
 
     for utt in &utterances {
         let chat_spk = salt_speaker(&utt.speaker);
 
-        let words: Vec<UtteranceContent> = utt
+        let words = utt
             .words
             .iter()
-            .map(|w| UtteranceContent::Word(Box::new(Word::simple(w))))
-            .collect();
+            .map(|w| build::word(w))
+            .collect::<Result<Vec<_>, _>>()?;
 
         if words.is_empty() {
             continue;
         }
 
-        let main_tier = MainTier::new(
-            SpeakerCode::new(chat_spk),
-            words,
-            Terminator::Period { span: Span::DUMMY },
-        );
+        let main_tier = build::main_tier(SpeakerCode::new(chat_spk), words, build::period());
 
         lines.push(Line::utterance(Utterance::new(main_tier)));
     }
 
-    lines.push(Line::header(Header::End));
+    lines.push(build::header(Header::End));
 
     Ok(ChatFile::new(lines))
 }

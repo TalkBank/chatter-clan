@@ -4,8 +4,8 @@
 Pass a directory path to process all `.cha` files recursively:
 
 ```bash
-chatter clan freq corpus/
-chatter clan mlu corpus/English/
+chatter-clan freq corpus/
+chatter-clan mlu corpus/English/
 ```
 
 ## Behavior
@@ -20,7 +20,7 @@ chatter clan mlu corpus/English/
 Some commands support `--per-file` mode to get separate results for each file:
 
 ```bash
-chatter clan mlu --per-file corpus/
+chatter-clan mlu --per-file corpus/
 ```
 
 ## Combining with filters
@@ -29,10 +29,10 @@ Directory processing composes with all filters:
 
 ```bash
 # CHI utterances across an entire corpus
-chatter clan freq --speaker CHI corpus/
+chatter-clan freq --speaker CHI corpus/
 
 # First 100 utterances in each file
-chatter clan mlu --range 1-100 corpus/English/
+chatter-clan mlu --range 1-100 corpus/English/
 ```
 
 ## JSON output for scripting
@@ -40,7 +40,7 @@ chatter clan mlu --range 1-100 corpus/English/
 Combine directory processing with JSON output for batch analysis:
 
 ```bash
-chatter clan mlu --format json corpus/ > results.json
+chatter-clan mlu --format json corpus/ > results.json
 ```
 
 See [Pipelines and Scripting](pipelines.md) for more advanced workflows.

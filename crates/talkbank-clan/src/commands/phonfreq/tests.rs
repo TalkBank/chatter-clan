@@ -1,23 +1,27 @@
 use super::*;
 use crate::framework::CommandOutput;
-use talkbank_model::Span;
-use talkbank_model::{DependentTier, MainTier, PhoTier, Terminator, UtteranceContent, Word};
+use talkbank_model::{DependentTier, PhoTier, UtteranceContent};
 
 /// Build an utterance with a %pho tier for testing.
 fn make_pho_utterance(words: &[&str], pho_tokens: &[&str]) -> Utterance {
     let content: Vec<UtteranceContent> = words
         .iter()
-        .map(|w| UtteranceContent::Word(Box::new(Word::simple(*w))))
+        .map(|w| UtteranceContent::Word(Box::new(crate::test_support::word(*w))))
         .collect();
-    let main = MainTier::new("CHI", content, Terminator::Period { span: Span::DUMMY });
+    let main = crate::test_support::main_tier("CHI", content);
     let mut utt = Utterance::new(main);
 
     let pho_items: Vec<PhoItem> = pho_tokens
         .iter()
         .map(|t| PhoItem::Word(PhoWord::new(t.to_string())))
         .collect();
-    utt.dependent_tiers
-        .push(DependentTier::Pho(PhoTier::new_pho(pho_items)));
+    utt.dependent_tiers.push(
+        DependentTier::Pho(PhoTier::new_pho(
+            talkbank_model::Location::Unlocated,
+            pho_items,
+        ))
+        .into(),
+    );
 
     utt
 }
@@ -96,9 +100,10 @@ fn phonfreq_position_tracking() {
 fn phonfreq_skips_utterances_without_pho() {
     let cmd = PhonfreqCommand;
     let mut state = PhonfreqState::default();
-    let content: Vec<UtteranceContent> =
-        vec![UtteranceContent::Word(Box::new(Word::simple("hello")))];
-    let main = MainTier::new("CHI", content, Terminator::Period { span: Span::DUMMY });
+    let content: Vec<UtteranceContent> = vec![UtteranceContent::Word(Box::new(
+        crate::test_support::word("hello"),
+    ))];
+    let main = crate::test_support::main_tier("CHI", content);
     let utt = Utterance::new(main);
     let chat_file = talkbank_model::ChatFile::new(vec![]);
     let file_ctx = file_ctx(&chat_file);

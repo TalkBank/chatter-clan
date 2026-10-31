@@ -8,9 +8,9 @@ Computes syntactic complexity by counting subordinating dependency relations in 
 ## Usage
 
 ```bash
-chatter clan complexity file.cha
-chatter clan complexity corpus/ --speaker PAR
-chatter clan complexity file.cha --format json
+chatter-clan complexity file.cha
+chatter-clan complexity corpus/ --speaker PAR
+chatter-clan complexity file.cha --format json
 ```
 
 ## What It Measures

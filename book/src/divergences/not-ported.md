@@ -20,7 +20,7 @@ For morphological analysis, POS tagging, and dependency parsing, use batchalign'
 
 | Command | Status |
 |---------|--------|
-| CHECK | Reimplemented as `chatter clan check` with full flag support |
+| CHECK | Reimplemented as `chatter-clan check` with full flag support |
 
 CHECK is fully ported. `chatter validate` provides additional spec-driven validation with rich diagnostics beyond what legacy CHECK offered.
 

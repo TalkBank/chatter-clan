@@ -4,7 +4,7 @@
 **Last updated:** 2026-06-12 19:01 EDT
 
 This page is the distilled, cross-cutting **field guide** for porting a CLAN
-command to byte-for-byte parity in `chatter clan`. It is not the mechanical
+command to byte-for-byte parity in `chatter-clan`. It is not the mechanical
 how-to (see [Adding a Command](adding-command.md)) and not the per-flag record
 (that lives in each command page's audit table, e.g.
 [FREQ](../commands/freq.md)). It is the **wisdom layer**: the patterns,
@@ -26,7 +26,7 @@ lesson as they land, not weeks later.
 ## 1. The method: source-grounded, golden-first, depth-first
 
 The unit of work is the **command**, not the flag (see the parity strategy in
-the repo `CLAUDE.md`). Within a command, each flag-row follows the same loop:
+the repo `AGENTS.md`). Within a command, each flag-row follows the same loop:
 
 1. **Read the manual section for intent.** `CLAN.html` states what a flag is
    *intended* to do. Cite it by section. The manual and the CHAT manual are
@@ -913,13 +913,13 @@ here.
   `!re_included.contains(status)` and the header picks its branch off the same
   set, no boolean-blindness. `www` is simply never placed in the set.
 
-- **Manual vs binary: the binary is the `chatter clan` oracle; reproduce, then
+- **Manual vs binary: the binary is the `chatter-clan` oracle; reproduce, then
   escalate the conflict, do not diverge solo (2026-06-05):** `+syyy` is the
   textbook case. The binary accepts it and re-includes `yyy`, but the manual says
   yyy "cannot be included," and the binary itself has no yyy-only header branch
   (so `+syyy` alone prints the default header while changing the count, a
   self-inconsistency). chatter reproduces the binary BYTE-for-byte (including the
-  quirk) because the binary is the parity target for `chatter clan` output, and
+  quirk) because the binary is the parity target for `chatter-clan` output, and
   records the manual conflict in the command's "Documented CLAN-bug divergences"
   table for PI adjudication. Reproducing-plus-documenting beats a solo decision to
   "fix" what the manual and binary disagree on.

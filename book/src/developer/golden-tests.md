@@ -3,12 +3,12 @@
 **Status:** Current
 **Last updated:** 2026-05-31 13:09 EDT
 
-Golden tests under `crates/talkbank-clan/tests/clan_golden/` (driven by the top-level `clan_golden.rs` entry point) and `crates/talkbank-clan/tests/transform_golden.rs` compare `chatter clan` output against the legacy CLAN C binaries character-by-character.
+Golden tests under `crates/talkbank-clan/tests/clan_golden/` (driven by the top-level `clan_golden.rs` entry point) and `crates/talkbank-clan/tests/transform_golden.rs` compare `chatter-clan` output against the legacy CLAN C binaries character-by-character.
 
 ## How they work
 
 1. Run the legacy CLAN binary on a reference corpus fixture file
-2. Run the equivalent `chatter clan` command on the same file
+2. Run the equivalent `chatter-clan` command on the same file
 3. Snapshot both outputs with `insta` (suffixed `@clan` and `@rust`)
 4. Any difference is a parity divergence that must be explained or fixed
 

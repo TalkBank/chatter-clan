@@ -272,12 +272,10 @@ pub(super) fn try_rewrite_d_flag(
         // consumer for MAXWD; pass through.
         Maxwd => None,
 
-        // MLU/MLUMOR `+d`/`+dN`, `onlydata`-level via shared
-        // `maingetflag` path at `cutt.cpp:9382` with non-empty
-        // per-program body at `cutt.cpp:9485` (CLAN_SRV-only
-        // rejection of `onlydata == 1 || 3`; otherwise pure
-        // level effect). chatter has no `--display-mode`
-        // consumer for MLU; pass through.
+        // MLU `+d1` emits one tab-separated `@ID`-expanded row per speaker.
+        // Bare `+d` is the separate SpreadsheetML mode and remains unsupported.
+        Mlu if rest == "1" => Some(vec!["--id-rows".into()]),
+        Mlu if rest.is_empty() => Some(vec!["--spreadsheet".into()]),
         Mlu => None,
 
         // MLT `+d`/`+dN`, `onlydata`-level via shared

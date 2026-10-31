@@ -21,10 +21,10 @@ this subcommand, `chat_to_srt()` for SRT).
 
 ```bash
 # Write WebVTT to stdout
-chatter clan chat2vtt input.cha
+chatter-clan chat2vtt input.cha
 
 # Write to a file
-chatter clan chat2vtt input.cha -o input.vtt
+chatter-clan chat2vtt input.cha -o input.vtt
 ```
 
 ## Options

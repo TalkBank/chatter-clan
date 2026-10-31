@@ -157,7 +157,7 @@ impl AnalysisCommand for SugarCommand {
         let mut morph_count = 0u64;
 
         for dep in &utterance.dependent_tiers {
-            match dep {
+            match &dep.tier {
                 DependentTier::Mor(tier) => {
                     mor_tier = Some(tier);
                 }

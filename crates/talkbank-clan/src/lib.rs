@@ -24,7 +24,7 @@
 //!
 //! # Public contract
 //!
-//! This crate is the engine behind `chatter clan ...`. Most end users should use the
+//! This crate is the engine behind `chatter-clan ...`. Most end users should use the
 //! CLI surface rather than embedding `talkbank-clan` directly.
 //!
 //! The library API is intended for:
@@ -90,3 +90,6 @@ pub mod framework;
 pub mod service;
 pub mod service_types;
 pub mod transforms;
+
+#[cfg(test)]
+mod test_support;

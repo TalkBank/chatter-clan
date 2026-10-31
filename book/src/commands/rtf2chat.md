@@ -10,7 +10,7 @@ Converts Rich Text Format (RTF) files into CHAT format by stripping RTF formatti
 ## Usage
 
 ```bash
-chatter clan rtf2chat input.rtf
+chatter-clan rtf2chat input.rtf
 ```
 
 ## Options

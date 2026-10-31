@@ -10,7 +10,7 @@ Reimplements CLAN's CONVORT command, which applies orthographic conversion rules
 ## Usage
 
 ```bash
-chatter clan ort --dictionary ort.cut file.cha
+chatter-clan ort --dictionary ort.cut file.cha
 ```
 
 ## Options
@@ -37,7 +37,7 @@ Audit summary: 1 Done, 0 Missing.
 ## External Data
 
 Requires an orthographic conversion dictionary. CLAN uses `ort.cut`
-from its `lib/` directory by default; `chatter clan ort` does not
+from its `lib/` directory by default; `chatter-clan ort` does not
 bundle a dictionary, so `--dictionary` must be passed explicitly.
 Format: `from_word  to_word` (one pair per line, tab or space
 separated). Lines starting with `#` or `;` are treated as

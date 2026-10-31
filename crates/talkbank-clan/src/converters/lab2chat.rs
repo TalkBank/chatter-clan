@@ -21,13 +21,9 @@
 //! - Silence markers are identified by a fixed set (`sil`, `sp`, `#`)
 //!   rather than configurable patterns.
 
-use talkbank_model::Span;
-use talkbank_model::{
-    Bullet, ChatFile, Header, IDHeader, LanguageCode, LanguageCodes, Line, MainTier,
-    ParticipantEntries, ParticipantEntry, ParticipantRole, SpeakerCode, Terminator, Utterance,
-    UtteranceContent, Word,
-};
+use talkbank_model::{ChatFile, Header, Line, ParticipantRole, SpeakerCode, Utterance};
 
+use super::build;
 use crate::framework::TransformError;
 
 /// A parsed LAB entry.
@@ -119,27 +115,11 @@ pub fn lab_to_chat_with_options(
 ) -> Result<ChatFile, TransformError> {
     let entries = parse_lab(content)?;
 
-    let lang = LanguageCode::new(language);
+    let lang = build::language(language)?;
     let spk = SpeakerCode::new(speaker);
     let role = ParticipantRole::new("Unidentified");
 
-    let mut lines = vec![
-        Line::header(Header::Utf8),
-        Line::header(Header::Begin),
-        Line::header(Header::Languages {
-            codes: LanguageCodes::new(vec![lang.clone()]),
-        }),
-        Line::header(Header::Participants {
-            entries: ParticipantEntries::new(vec![ParticipantEntry {
-                speaker_code: spk.clone(),
-                name: None,
-                role: role.clone(),
-            }]),
-        }),
-        Line::header(Header::ID(
-            IDHeader::new(lang.clone(), spk.clone(), role).with_corpus(corpus),
-        )),
-    ];
+    let mut lines = build::preamble(&lang, &[(spk.clone(), role)], corpus);
 
     for entry in &entries {
         // Skip silence markers
@@ -147,18 +127,18 @@ pub fn lab_to_chat_with_options(
             continue;
         }
 
-        let words = vec![UtteranceContent::Word(Box::new(Word::simple(&entry.label)))];
+        let words = vec![build::word(&entry.label)?];
 
         let start_ms = (entry.start * 1000.0) as u64;
         let end_ms = (entry.end * 1000.0) as u64;
 
-        let main_tier = MainTier::new(spk.clone(), words, Terminator::Period { span: Span::DUMMY })
-            .with_bullet(Bullet::new(start_ms, end_ms));
+        let main_tier = build::main_tier(spk.clone(), words, build::period())
+            .with_bullet(build::bullet(start_ms, end_ms));
 
         lines.push(Line::utterance(Utterance::new(main_tier)));
     }
 
-    lines.push(Line::header(Header::End));
+    lines.push(build::header(Header::End));
 
     Ok(ChatFile::new(lines))
 }

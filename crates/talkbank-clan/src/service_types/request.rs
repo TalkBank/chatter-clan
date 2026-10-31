@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use thiserror::Error;
 
 use crate::commands::chains::ChainsConfig;
+use crate::commands::chip::ChipConfig;
 use crate::commands::codes::CodesConfig;
 use crate::commands::combo::ComboConfig;
 use crate::commands::cooccur::CooccurConfig;
@@ -66,7 +67,7 @@ pub enum AnalysisRequest {
     /// `dist`
     Dist(DistConfig),
     /// `chip`
-    Chip,
+    Chip(ChipConfig),
     /// `phonfreq`
     Phonfreq,
     /// `modrep`

@@ -10,7 +10,7 @@ Parses SRT (SubRip) subtitle files and converts them to CHAT format, mapping eac
 ## Usage
 
 ```bash
-chatter clan srt2chat input.srt
+chatter-clan srt2chat input.srt
 ```
 
 ## Options

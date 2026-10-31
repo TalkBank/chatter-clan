@@ -23,9 +23,9 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use talkbank_model::{ChatFile, DependentTier, Line, NonEmptyString, UserDefinedDependentTier};
+use talkbank_model::{ChatFile, DependentTier, Line, Location, RecoveryText, TextTier};
 
-use crate::framework::{TransformCommand, TransformError};
+use crate::framework::{TransformCommand, TransformError, replace_word_text};
 
 /// Configuration for the ORT command.
 pub struct OrtConfig {
@@ -52,37 +52,28 @@ impl TransformCommand for OrtCommand {
 
     /// Apply dictionary-based word substitutions and preserve originals on `%ort:`.
     fn transform(&self, file: &mut ChatFile) -> Result<(), TransformError> {
-        for line in file.lines.iter_mut() {
+        for line in file.lines.as_mut_slice().iter_mut() {
             if let Line::Utterance(utt) = line {
                 let original_content = utt.main.content.to_content_string();
 
                 // Apply word substitutions on main tier content
                 let mut modified = false;
-                for item in utt.main.content.content.iter_mut() {
+                for item in utt.main.content.content.as_mut_slice().iter_mut() {
                     if let talkbank_model::UtteranceContent::Word(word) = item {
                         let raw = word.raw_text().to_owned();
                         let lower = raw.to_lowercase();
                         if let Some(replacement) = self.dictionary.get(&lower) {
-                            word.replace_simple_text(replacement.clone());
+                            replace_word_text(word, replacement)?;
                             modified = true;
                         }
                     }
                 }
 
                 // Add %ort tier with original text if modifications were made
-                if modified
-                    && let (Some(label), Some(content)) = (
-                        NonEmptyString::new("ort"),
-                        NonEmptyString::new(original_content.trim()),
-                    )
-                {
-                    utt.dependent_tiers.push(DependentTier::UserDefined(
-                        UserDefinedDependentTier {
-                            label,
-                            content,
-                            span: talkbank_model::Span::DUMMY,
-                        },
-                    ));
+                if modified && let Ok(content) = RecoveryText::new(original_content.trim()) {
+                    utt.dependent_tiers.push(
+                        DependentTier::Ort(TextTier::new(Location::Unlocated, content)).into(),
+                    );
                 }
             }
         }

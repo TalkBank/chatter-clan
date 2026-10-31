@@ -10,7 +10,7 @@ Reimplements CLAN's `delim` command, which ensures every main tier has a termina
 ## Usage
 
 ```bash
-chatter clan delim file.cha
+chatter-clan delim file.cha
 ```
 
 ## Options

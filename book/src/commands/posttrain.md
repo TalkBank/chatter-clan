@@ -22,7 +22,7 @@ pipeline.
 
 ## Behavior
 
-Invoking `chatter clan posttrain` prints an error and exits non-zero.
+Invoking `chatter-clan posttrain` prints an error and exits non-zero.
 
 ## See also
 

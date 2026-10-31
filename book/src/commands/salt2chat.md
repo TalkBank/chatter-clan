@@ -10,7 +10,7 @@ Converts SALT (Systematic Analysis of Language Transcripts) transcription files 
 ## Usage
 
 ```bash
-chatter clan salt2chat input.slt
+chatter-clan salt2chat input.slt
 ```
 
 ## Options

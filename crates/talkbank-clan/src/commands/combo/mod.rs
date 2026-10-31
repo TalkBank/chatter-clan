@@ -325,10 +325,7 @@ impl AnalysisCommand for ComboCommand {
         });
 
         if !expr_hits.is_empty() {
-            let line_number = file_context
-                .line_map
-                .map(|lm| lm.line_of(utterance.main.span.start))
-                .unwrap_or(0);
+            let line_number = file_context.utterance_line(utterance).unwrap_or(0);
             let pre_context: Vec<String> = state.recent.iter().cloned().collect();
             let match_idx = state.matches.len();
             state.matches.push(ComboMatch {

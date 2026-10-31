@@ -1,23 +1,21 @@
-//! The `@ID`-derived spreadsheet columns for FREQ `+d2`/`+d3`.
+//! Shared `@ID`-derived SpreadsheetML columns.
 //!
 //! Lowers one parsed `@ID` header into its fixed [`ID_COLUMN_COUNT`] cells
 //! ([`id_header_to_cells`]), reproducing CLAN's `excelOutputID`
-//! (`cutt.cpp:11230`). Extracted verbatim from `freq/spreadsheet.rs`; the parent
-//! re-exports the public items so the workbook builders continue to reference
-//! them by name.
+//! (`cutt.cpp:11236`). FREQ and MLU use these same field transformations.
 
 use talkbank_model::{IDHeader, SesValue};
 
 use crate::framework::spreadsheet::Cell;
 
-/// Number of `@ID`-derived columns in the FREQ spreadsheet: the ten `@ID`
-/// fields, with the SES slot split into Race + SES.
-pub(super) const ID_COLUMN_COUNT: usize = 11;
+/// Number of `@ID`-derived spreadsheet columns: the ten `@ID` fields, with the
+/// SES slot split into Race + SES.
+pub(crate) const ID_COLUMN_COUNT: usize = 11;
 
 /// The fixed `@ID` column headers CLAN emits, in order (`freq.cpp:3301`). The
 /// SES `@ID` field expands to the two columns `Race` + `SES`, so there are 11
 /// headers for 10 `@ID` fields.
-pub(super) const ID_COLUMN_HEADERS: [&str; ID_COLUMN_COUNT] = [
+pub(crate) const ID_COLUMN_HEADERS: [&str; ID_COLUMN_COUNT] = [
     "Language",
     "Corpus",
     "Code",
@@ -35,7 +33,7 @@ pub(super) const ID_COLUMN_HEADERS: [&str; ID_COLUMN_COUNT] = [
 /// reproducing CLAN's `excelOutputID` (`cutt.cpp:11230`): one cell per `@ID`
 /// field, empty fields rendered as `.`, all-digit fields rendered as Number
 /// cells, and the SES field split into a Race cell and an SES cell.
-pub(super) fn id_header_to_cells(id: &IDHeader) -> Vec<Cell> {
+pub(crate) fn id_header_to_cells(id: &IDHeader) -> Vec<Cell> {
     let language = language_field(id);
     let mut cells = Vec::with_capacity(ID_COLUMN_COUNT);
     cells.push(id_field_cell(Some(&language)));
@@ -50,6 +48,19 @@ pub(super) fn id_header_to_cells(id: &IDHeader) -> Vec<Cell> {
     cells.push(id_field_cell(id.custom_field.as_ref().map(|c| c.as_str())));
     debug_assert_eq!(cells.len(), ID_COLUMN_COUNT);
     cells
+}
+
+/// Lower a speaker's optional `@ID` header, using CLAN's code-only fallback
+/// when that speaker has no header in the input file.
+pub(crate) fn speaker_id_to_cells(id: Option<&IDHeader>, speaker: &str) -> Vec<Cell> {
+    match id {
+        Some(id) => id_header_to_cells(id),
+        None => {
+            let mut cells = vec![Cell::empty(); ID_COLUMN_COUNT];
+            cells[2] = Cell::text(speaker);
+            cells
+        }
+    }
 }
 
 /// The Language `@ID` field as CLAN renders it: the comma-space-joined language
@@ -90,7 +101,7 @@ fn id_field_cell(field: Option<&str>) -> Cell {
 /// `Combined` variant with a comma) rather than the raw `@ID` bytes; the only
 /// divergence is a space-separated combined SES (`White UC`), which chatter has
 /// already canonicalized to `White,UC` at parse time.
-pub(super) fn ses_field_cells(ses: Option<&SesValue>) -> Vec<Cell> {
+pub(crate) fn ses_field_cells(ses: Option<&SesValue>) -> Vec<Cell> {
     let raw = ses.map(|s| s.as_str()).unwrap_or_default();
     if raw.is_empty() {
         return vec![Cell::empty(), Cell::empty()];

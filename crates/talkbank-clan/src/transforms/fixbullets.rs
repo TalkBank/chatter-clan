@@ -11,11 +11,11 @@
 //! expansion is intentionally not emulated silently.
 
 use talkbank_model::{
-    BracketedItem, Bullet, BulletContent, BulletContentSegment, ChatFile, Header, Line,
-    MediaTiming, UtteranceContent,
+    BracketedItem, Bullet, BulletContent, BulletContentSegment, ChatFile, CommentContent, Header,
+    Line, MediaTiming, UtteranceContent,
 };
 
-use crate::framework::{TransformCommand, TransformError};
+use crate::framework::{TransformCommand, TransformError, parsed_bullet, parsed_bullet_mut};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 /// Configuration for the AST-safe subset of `FIXBULLETS`.
@@ -51,7 +51,7 @@ impl TransformCommand for FixbulletsCommand {
     fn transform(&self, file: &mut ChatFile) -> Result<(), TransformError> {
         let mut prev_end_ms: Option<u64> = None;
 
-        for line in file.lines.iter_mut() {
+        for line in file.lines.as_mut_slice().iter_mut() {
             match line {
                 Line::Header { header, .. } => {
                     if self.config.offset_ms != 0 {
@@ -67,11 +67,12 @@ impl TransformCommand for FixbulletsCommand {
 
                     if tier_selected("*", &self.config.include_tiers, &self.config.exclude_tiers)? {
                         shift_main_tier_bullets(
-                            &mut utterance.main.content.content,
+                            utterance.main.content.content.as_mut_slice(),
                             self.config.offset_ms,
                         )?;
 
-                        if let Some(bullet) = &mut utterance.main.content.bullet {
+                        if let Some(state) = &mut utterance.main.content.bullet {
+                            let bullet = parsed_bullet_mut(state)?;
                             shift_bullet(bullet, self.config.offset_ms)?;
                             if let Some(prev_end) = prev_end_ms
                                 && bullet.timing.start_ms < prev_end
@@ -83,8 +84,8 @@ impl TransformCommand for FixbulletsCommand {
                             }
                             prev_end_ms = Some(bullet.timing.end_ms);
                         }
-                    } else if let Some(bullet) = &utterance.main.content.bullet {
-                        prev_end_ms = Some(bullet.timing.end_ms);
+                    } else if let Some(state) = &utterance.main.content.bullet {
+                        prev_end_ms = Some(parsed_bullet(state)?.timing.end_ms);
                     }
 
                     for tier in &mut utterance.dependent_tiers {
@@ -93,7 +94,7 @@ impl TransformCommand for FixbulletsCommand {
                             &self.config.include_tiers,
                             &self.config.exclude_tiers,
                         )? {
-                            shift_dependent_tier_bullets(tier, self.config.offset_ms)?;
+                            shift_dependent_tier_bullets(&mut tier.tier, self.config.offset_ms)?;
                         }
                     }
                 }
@@ -164,7 +165,10 @@ fn tier_selected(
 
 fn shift_header_bullets(header: &mut Header, offset_ms: i64) -> Result<(), TransformError> {
     if let Header::Comment { content } = header {
-        shift_bullet_content(content, offset_ms)?;
+        let mut updated = content.as_bullet_content().clone();
+        shift_bullet_content(&mut updated, offset_ms)?;
+        *content = CommentContent::try_from_bullets(updated)
+            .map_err(|error| TransformError::Transform(error.to_string()))?;
     }
     Ok(())
 }
@@ -193,9 +197,6 @@ fn shift_dependent_tier_bullets(
                     shift_bullet(bullet, offset_ms)?;
                 }
             }
-            if let Some(bullet) = &mut t.bullet {
-                shift_bullet(bullet, offset_ms)?;
-            }
         }
         DependentTier::Mor(_)
         | DependentTier::Gra(_)
@@ -218,7 +219,16 @@ fn shift_dependent_tier_bullets(
         | DependentTier::Par(_)
         | DependentTier::Tim(_)
         | DependentTier::UserDefined(_)
-        | DependentTier::Unsupported(_) => {}
+        | DependentTier::Unsupported(_)
+        | DependentTier::UnparsedMor(_)
+        | DependentTier::UnparsedGra(_)
+        | DependentTier::UnparsedPho(_)
+        | DependentTier::UnparsedMod(_)
+        | DependentTier::UnparsedSin(_)
+        | DependentTier::UnparsedWor(_)
+        | DependentTier::UnparsedPhoaln(_)
+        | DependentTier::UnparsedXphoint(_)
+        | DependentTier::UnparsedText(_) => {}
     }
     Ok(())
 }
@@ -245,26 +255,33 @@ fn shift_main_tier_bullets(
                 }
             }
             UtteranceContent::Group(group) => {
-                shift_bracketed_bullets(&mut group.content.content, offset_ms)?;
+                shift_bracketed_bullets(group.content.content.as_mut_slice(), offset_ms)?;
             }
             UtteranceContent::AnnotatedGroup(annotated) => {
-                shift_bracketed_bullets(&mut annotated.inner.content.content, offset_ms)?;
+                shift_bracketed_bullets(annotated.inner.content.content.as_mut_slice(), offset_ms)?;
             }
             UtteranceContent::Retrace(retrace) => {
-                shift_bracketed_bullets(&mut retrace.content.content, offset_ms)?;
+                shift_bracketed_bullets(retrace.content.content.as_mut_slice(), offset_ms)?;
             }
             UtteranceContent::PhoGroup(group) => {
-                shift_bracketed_bullets(&mut group.content.content, offset_ms)?;
+                shift_bracketed_bullets(group.content.content.as_mut_slice(), offset_ms)?;
             }
             UtteranceContent::SinGroup(group) => {
-                shift_bracketed_bullets(&mut group.content.content, offset_ms)?;
+                shift_bracketed_bullets(group.content.content.as_mut_slice(), offset_ms)?;
             }
             UtteranceContent::Quotation(group) => {
-                shift_bracketed_bullets(&mut group.content.content, offset_ms)?;
+                shift_bracketed_bullets(group.content.content.as_mut_slice(), offset_ms)?;
+            }
+            UtteranceContent::AnnotatedQuotation(annotated) => {
+                shift_bracketed_bullets(annotated.inner.content.content.as_mut_slice(), offset_ms)?;
+            }
+            UtteranceContent::AnnotatedRetrace(annotated) => {
+                shift_bracketed_bullets(annotated.inner.content.content.as_mut_slice(), offset_ms)?;
             }
             UtteranceContent::InternalBullet(bullet) => {
-                shift_bullet(bullet, offset_ms)?;
+                shift_bullet(crate::framework::parsed_bullet_mut(bullet)?, offset_ms)?;
             }
+            UtteranceContent::Action(_) | UtteranceContent::OrphanAnnotation(_) => {}
             UtteranceContent::Event(_)
             | UtteranceContent::AnnotatedEvent(_)
             | UtteranceContent::Pause(_)
@@ -307,22 +324,32 @@ fn shift_bracketed_bullets(
                 }
             }
             BracketedItem::AnnotatedGroup(annotated) => {
-                shift_bracketed_bullets(&mut annotated.inner.content.content, offset_ms)?;
+                shift_bracketed_bullets(annotated.inner.content.content.as_mut_slice(), offset_ms)?;
             }
             BracketedItem::Retrace(retrace) => {
-                shift_bracketed_bullets(&mut retrace.content.content, offset_ms)?;
+                shift_bracketed_bullets(retrace.content.content.as_mut_slice(), offset_ms)?;
             }
             BracketedItem::PhoGroup(group) => {
-                shift_bracketed_bullets(&mut group.content.content, offset_ms)?;
+                shift_bracketed_bullets(group.content.content.as_mut_slice(), offset_ms)?;
             }
             BracketedItem::SinGroup(group) => {
-                shift_bracketed_bullets(&mut group.content.content, offset_ms)?;
+                shift_bracketed_bullets(group.content.content.as_mut_slice(), offset_ms)?;
             }
             BracketedItem::Quotation(group) => {
-                shift_bracketed_bullets(&mut group.content.content, offset_ms)?;
+                shift_bracketed_bullets(group.content.content.as_mut_slice(), offset_ms)?;
             }
+            BracketedItem::Group(group) => {
+                shift_bracketed_bullets(group.content.content.as_mut_slice(), offset_ms)?;
+            }
+            BracketedItem::AnnotatedQuotation(annotated) => {
+                shift_bracketed_bullets(annotated.inner.content.content.as_mut_slice(), offset_ms)?;
+            }
+            BracketedItem::AnnotatedRetrace(annotated) => {
+                shift_bracketed_bullets(annotated.inner.content.content.as_mut_slice(), offset_ms)?;
+            }
+            BracketedItem::OrphanAnnotation(_) => {}
             BracketedItem::InternalBullet(bullet) => {
-                shift_bullet(bullet, offset_ms)?;
+                shift_bullet(crate::framework::parsed_bullet_mut(bullet)?, offset_ms)?;
             }
             BracketedItem::Event(_)
             | BracketedItem::AnnotatedEvent(_)

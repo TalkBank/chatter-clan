@@ -42,6 +42,41 @@ fn multiple_speakers() {
     );
 }
 
+#[test]
+fn chip_flags_route_to_scoring_options() {
+    let input =
+        args("clan analyze chip +bMOT +cCHI +k +g +q4 +w2 +x0.5 -nb -nc -ns -t%mor file.cha");
+    let result = rewrite_clan_args(&input);
+    assert_eq!(
+        result,
+        args(
+            "clan analyze chip --adult MOT --child CHI --plus-k --substitution --window 4 \
+             --min-words 2 --min-index 0.5 --disable-scoring b --disable-scoring c \
+             --disable-scoring s --main-tier file.cha"
+        )
+    );
+}
+
+#[test]
+fn chip_exclusion_list_routes_to_typed_list_loader() {
+    let input = args("clan analyze chip -hwords.cut file.cha");
+    let result = rewrite_clan_args(&input);
+    assert_eq!(
+        result,
+        args("clan analyze chip --exclusion-list words.cut file.cha")
+    );
+}
+
+#[test]
+fn bare_chip_exclusion_flag_fails_closed_instead_of_becoming_help() {
+    let input = args("clan analyze chip -h file.cha");
+    let result = rewrite_clan_args(&input);
+    assert_eq!(
+        result,
+        args("clan analyze chip --chip-invalid-exclusion-list file.cha")
+    );
+}
+
 /// CLAN silently treats `+tCHI` (no `*` sigil) the same as
 /// `+t*CHI`, the sigil is implicit when the first character is
 /// not `*`, `%`, or `@`. chatter must do the same so a user
@@ -725,20 +760,34 @@ fn maxwd_dn_passes_through() {
     assert_passthrough("clan maxwd +d1 file.cha");
 }
 
-/// MLU/MLUMOR have no local `case 'd'`; consumption via shared
-/// `maingetflag` path at `cutt.cpp:9382` with non-empty
-/// per-program body at `cutt.cpp:9485` (`onlydata == 1 || 3`
-/// rejected only under CLAN_SRV; otherwise pure level effect).
-/// chatter has no `--display-mode` consumer for MLU.
+/// Bare MLU `+d` selects the SpreadsheetML mode.
 #[test]
-fn mlu_d_bare_passes_through() {
-    assert_passthrough("clan mlu +d file.cha");
+fn mlu_d_bare_maps_to_spreadsheet() {
+    assert_eq!(
+        rewrite_clan_args(&args("clan mlu +d file.cha")),
+        args("clan mlu --spreadsheet file.cha")
+    );
 }
 
-/// Non-bare MLU `+dN` (strict-RED case).
+/// MLU `+d1` selects @ID-expanded speaker rows.
 #[test]
-fn mlu_dn_passes_through() {
-    assert_passthrough("clan mlu +d1 file.cha");
+fn mlu_d1_maps_to_id_rows() {
+    assert_eq!(
+        rewrite_clan_args(&args("clan mlu +d1 file.cha")),
+        args("clan mlu --id-rows file.cha")
+    );
+}
+
+#[test]
+fn mlu_d_modes_rewrite_in_argument_order() {
+    assert_eq!(
+        rewrite_clan_args(&args("clan mlu +d +d1 file.cha")),
+        args("clan mlu --spreadsheet --id-rows file.cha")
+    );
+    assert_eq!(
+        rewrite_clan_args(&args("clan mlu +d1 +d file.cha")),
+        args("clan mlu --id-rows --spreadsheet file.cha")
+    );
 }
 
 /// MLT has no local `case 'd'`; consumption via shared
@@ -1126,10 +1175,10 @@ fn freq_dn_unmapped_passes_through() {
 }
 
 #[test]
-fn case_sensitive() {
+fn plus_k() {
     let input = args("clan analyze freq +k file.cha");
     let result = rewrite_clan_args(&input);
-    assert_eq!(result, args("clan analyze freq --case-sensitive file.cha"));
+    assert_eq!(result, args("clan analyze freq --plus-k file.cha"));
 }
 
 /// FREQ's `+c` (and `+c0` alias) is the "count only capitalised
@@ -1285,6 +1334,10 @@ fn mlu_o3_and_word_form_noop_flags_rewrite() {
     assert_eq!(
         rewrite_clan_args(&args("clan mlu +r6 file.cha")),
         args("clan mlu --include-retracings file.cha")
+    );
+    assert_eq!(
+        rewrite_clan_args(&args("clan mlu +d1 +u file.cha")),
+        args("clan mlu --id-rows --combine-files file.cha")
     );
 }
 

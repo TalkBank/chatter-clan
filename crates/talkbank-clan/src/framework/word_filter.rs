@@ -142,11 +142,7 @@ pub fn is_countable_word(word: &Word) -> bool {
     // Defensive: empty cleaned_text means no lexical content.
     // The model currently prevents constructing empty words, but this
     // guard ensures correctness if that invariant ever relaxes.
-    if word.cleaned_text().is_empty() {
-        return false;
-    }
-
-    true
+    !word.cleaned_text().is_empty()
 }
 
 /// Determine whether this word category remains countable for analysis.
@@ -461,16 +457,16 @@ mod tests {
     /// Plain lexical words should be countable.
     #[test]
     fn simple_word_is_countable() {
-        let word = Word::simple("dog");
+        let word = crate::test_support::word("dog");
         assert!(is_countable_word(&word));
     }
 
     /// Untranscribed tokens (`xxx/yyy/www`) should be excluded.
     #[test]
     fn untranscribed_words_are_not_countable() {
-        let xxx = Word::simple("xxx");
-        let yyy = Word::simple("yyy");
-        let www = Word::simple("www");
+        let xxx = crate::test_support::word("xxx");
+        let yyy = crate::test_support::word("yyy");
+        let www = crate::test_support::word("www");
 
         assert!(!is_countable_word(&xxx));
         assert!(!is_countable_word(&yyy));
@@ -480,10 +476,11 @@ mod tests {
     /// Omission/filler/nonword/fragment categories should be excluded.
     #[test]
     fn omissions_fillers_nonwords_fragments_not_countable() {
-        let omission = Word::simple("is").with_category(WordCategory::Omission);
-        let filler = Word::simple("um").with_category(WordCategory::Filler);
-        let nonword = Word::simple("gaga").with_category(WordCategory::Nonword);
-        let fragment = Word::simple("fr").with_category(WordCategory::PhonologicalFragment);
+        let omission = crate::test_support::word("is").with_category(WordCategory::Omission);
+        let filler = crate::test_support::word("um").with_category(WordCategory::Filler);
+        let nonword = crate::test_support::word("gaga").with_category(WordCategory::Nonword);
+        let fragment =
+            crate::test_support::word("fr").with_category(WordCategory::PhonologicalFragment);
 
         assert!(!is_countable_word(&omission));
         assert!(!is_countable_word(&filler));
@@ -495,7 +492,7 @@ mod tests {
     #[test]
     fn ca_omission_is_countable() {
         // CA omissions represent uncertain but present speech
-        let ca = Word::simple("word").with_category(WordCategory::CAOmission);
+        let ca = crate::test_support::word("word").with_category(WordCategory::CAOmission);
         assert!(is_countable_word(&ca));
     }
 
@@ -505,12 +502,12 @@ mod tests {
         use talkbank_model::UtteranceContent;
 
         // Utterance with a normal word has countable content
-        let word = Word::simple("dog");
+        let word = crate::test_support::word("dog");
         let content = vec![UtteranceContent::Word(Box::new(word))];
         assert!(has_countable_words(&content));
 
         // Utterance with only untranscribed material has no countable content
-        let xxx = Word::simple("xxx");
+        let xxx = crate::test_support::word("xxx");
         let content = vec![UtteranceContent::Word(Box::new(xxx))];
         assert!(!has_countable_words(&content));
     }

@@ -8,8 +8,8 @@ Gem filters restrict analysis to utterances within `@Bg` / `@Eg` (Begin Gem / En
 Analyze only utterances within a labeled gem segment:
 
 ```bash
-chatter clan freq --gem "story" file.cha
-chatter clan mlu --gem "frog story" file.cha
+chatter-clan freq --gem "story" file.cha
+chatter-clan mlu --gem "frog story" file.cha
 ```
 
 CLAN equivalent: `+g"story"`
@@ -19,7 +19,7 @@ CLAN equivalent: `+g"story"`
 Skip utterances within specific gem segments:
 
 ```bash
-chatter clan freq --exclude-gem "warmup" file.cha
+chatter-clan freq --exclude-gem "warmup" file.cha
 ```
 
 CLAN equivalent: `-g"warmup"`

@@ -10,7 +10,7 @@ Converts LAB (label) timing files into CHAT format. LAB files contain time-align
 ## Usage
 
 ```bash
-chatter clan lab2chat input.lab
+chatter-clan lab2chat input.lab
 ```
 
 ## Options

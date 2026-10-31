@@ -8,7 +8,7 @@ mod transforms;
 
 use crate::cli::ClanCommands;
 
-/// Dispatch a `chatter clan` subcommand.
+/// Dispatch a `chatter-clan` command.
 pub fn run_clan(command: ClanCommands) {
     let command = match analysis::dispatch(command) {
         Ok(()) => return,

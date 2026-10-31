@@ -204,7 +204,21 @@ fn run_clan_process(
 
 /// Path to the reference corpus.
 pub fn corpus_dir() -> PathBuf {
-    workspace_root().join("corpus/reference")
+    let path = match std::env::var_os("CHATTER_CORPUS_DIR") {
+        Some(path) if !path.is_empty() => PathBuf::from(path),
+        Some(_) => panic!("CHATTER_CORPUS_DIR must not be empty"),
+        None => {
+            let home = std::env::var_os("HOME")
+                .unwrap_or_else(|| panic!("set CHATTER_CORPUS_DIR when HOME is unavailable"));
+            PathBuf::from(home).join("talkbank/chatter/corpus/reference")
+        }
+    };
+    assert!(
+        path.is_dir(),
+        "reference corpus directory {} is unavailable; set CHATTER_CORPUS_DIR",
+        path.display()
+    );
+    path
 }
 
 /// Resolve a reference corpus file path.

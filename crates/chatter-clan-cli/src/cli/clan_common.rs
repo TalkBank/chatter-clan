@@ -116,12 +116,10 @@ pub struct CommonAnalysisArgs {
     #[arg(long)]
     pub include_retracings: bool,
 
-    /// Match `+s`/`-s` / `--include-word`/`--exclude-word` patterns
-    /// case-sensitively. CLAN's `+k` flag. Default is case-
-    /// insensitive matching (both pattern and word are lower-cased
-    /// before comparison), matching legacy CLAN's behaviour
-    /// without `+k`.
-    #[arg(long = "case-sensitive")]
+    /// Toggle command-specific case handling, matching CLAN's `+k`.
+    /// This flips the command's default; it may preserve or fold case.
+    /// `--case-sensitive` is accepted as a compatibility alias.
+    #[arg(long = "plus-k", alias = "case-sensitive")]
     pub case_sensitive: bool,
 
     /// Output format: clan (default, character-for-character match with legacy CLAN), text, json, or csv

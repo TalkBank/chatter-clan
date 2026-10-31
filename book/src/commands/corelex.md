@@ -10,9 +10,9 @@ Identifies "core" vocabulary items that appear above a frequency threshold. Core
 ## Usage
 
 ```bash
-chatter clan corelex file.cha
-chatter clan corelex --speaker CHI file.cha
-chatter clan corelex --threshold 5 file.cha
+chatter-clan corelex file.cha
+chatter-clan corelex --speaker CHI file.cha
+chatter-clan corelex --threshold 5 file.cha
 ```
 
 ## Options (chatter-native)

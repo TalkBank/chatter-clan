@@ -113,7 +113,7 @@ impl AnalysisCommand for MortableCommand {
         let speaker = utterance.main.speaker.to_string();
 
         for dep in &utterance.dependent_tiers {
-            if let DependentTier::Mor(tier) = dep {
+            if let DependentTier::Mor(tier) = &dep.tier {
                 for pos in mor_item_pos_tags(tier) {
                     *state.totals.entry(speaker.clone()).or_insert(0) += 1;
 

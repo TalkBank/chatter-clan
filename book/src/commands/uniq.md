@@ -12,9 +12,9 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409094
 ## Usage
 
 ```bash
-chatter clan uniq file.cha
-chatter clan uniq --sort file.cha
-chatter clan uniq --format json corpus/
+chatter-clan uniq file.cha
+chatter-clan uniq --sort file.cha
+chatter-clan uniq --format json corpus/
 ```
 
 ## Options (chatter-native)

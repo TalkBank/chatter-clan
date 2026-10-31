@@ -30,7 +30,7 @@ use std::fmt::Write;
 
 use talkbank_model::{ChatFile, Line};
 
-use crate::framework::{TransformError, spoken_main_text};
+use crate::framework::{TransformError, parsed_bullet, spoken_main_text};
 
 /// Format milliseconds as SRT timestamp: "HH:MM:SS,mmm".
 fn format_srt_timestamp(ms: u64) -> String {
@@ -54,9 +54,10 @@ pub fn chat_to_srt(chat: &ChatFile) -> Result<String, TransformError> {
             continue;
         };
 
-        let Some(ref bullet) = utt.main.content.bullet else {
+        let Some(state) = &utt.main.content.bullet else {
             continue;
         };
+        let bullet = parsed_bullet(state)?;
 
         let start = format_srt_timestamp(bullet.timing.start_ms);
         let end = format_srt_timestamp(bullet.timing.end_ms);
@@ -91,9 +92,10 @@ pub fn chat_to_vtt(chat: &ChatFile) -> Result<String, TransformError> {
             continue;
         };
 
-        let Some(ref bullet) = utt.main.content.bullet else {
+        let Some(state) = &utt.main.content.bullet else {
             continue;
         };
+        let bullet = parsed_bullet(state)?;
 
         let start = format_vtt_timestamp(bullet.timing.start_ms);
         let end = format_vtt_timestamp(bullet.timing.end_ms);

@@ -167,11 +167,11 @@ impl AnalysisCommandName {
     }
 
     /// Whether this command preserves word case by default. These are the
-    /// commands in CLAN's `mmaininit` `nomap=TRUE` set (cutt.cpp:7845): FREQ
-    /// and VOCD. For them `+k` FOLDS to lowercase; every other command folds
-    /// by default and `+k` preserves.
+    /// commands in CLAN's `mmaininit` `nomap=TRUE` set (cutt.cpp:7845): CHIP,
+    /// FREQ and VOCD. For them `+k` FOLDS to lowercase; every other command
+    /// folds by default and `+k` preserves.
     pub const fn preserves_case_by_default(self) -> bool {
-        matches!(self, Self::Freq | Self::Vocd)
+        matches!(self, Self::Chip | Self::Freq | Self::Vocd)
     }
 
     /// Resolve the effective case-sensitive (preserve-case) keying and
@@ -179,12 +179,11 @@ impl AnalysisCommandName {
     /// the per-command `nomap` default (cutt.cpp:13816): preserve-by-default
     /// commands fold under `+k`; fold-by-default commands preserve under `+k`.
     ///
-    /// This is the single source of the `+k` polarity. FREQ and VOCD (the
-    /// preserve-by-default commands) route both their keying and `+s`-matching
-    /// seams through it. The fold-by-default commands currently pass the raw
+    /// This is the single source of the `+k` polarity. FREQ and VOCD route
+    /// both their keying and `+s`-matching seams through it; CHIP routes its
+    /// stem-keying through it. Fold-by-default commands currently pass the raw
     /// flag through, which equals this helper's output for them (the identity
-    /// branch); they should be converted to call it as each is driven to
-    /// parity, so the invariant is enforced rather than relied upon.
+    /// branch).
     pub const fn effective_case_sensitive(self, plus_k_present: bool) -> bool {
         if self.preserves_case_by_default() {
             !plus_k_present

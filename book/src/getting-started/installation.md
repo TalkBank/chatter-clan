@@ -1,15 +1,16 @@
 # Installation
 
 **Status:** Current
-**Last modified:** 2026-06-24 09:00 EDT
+**Last modified:** 2026-10-31
 
 `chatter-clan` is the standalone CLI that reimplements CLAN's analysis commands
 over the chatter CHAT toolchain. It is not published on crates.io, so build it
 from this repository.
 
-> **Dormant.** chatter-clan is an experimental, halted reimplementation kept
-> buildable so it can be resumed or forked. See the repository `README.md` and
-> `CLAUDE.md` for status and scope.
+> **Parity is in progress.** The project is active and standalone, but not every
+> CLAN command or option is implemented or verified. See the repository
+> [`README.md`](../../../README.md), [`AGENTS.md`](../../../AGENTS.md),
+> and [parity status](../parity-status.md).
 
 ## From source
 

@@ -90,16 +90,11 @@ impl DatabaseFilter {
         }
 
         // Speaker codes
-        if !self.speaker_codes.is_empty()
+        !(!self.speaker_codes.is_empty()
             && !self
                 .speaker_codes
                 .iter()
-                .any(|c| c.eq_ignore_ascii_case(&meta.speaker_code))
-        {
-            return false;
-        }
-
-        true
+                .any(|c| c.eq_ignore_ascii_case(&meta.speaker_code)))
     }
 
     /// Filter a slice of entries, returning only those that match.

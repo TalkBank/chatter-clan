@@ -26,12 +26,12 @@ impl TransformCommand for DelimCommand {
 
     /// Ensure each main tier has a terminator, defaulting to period when absent.
     fn transform(&self, file: &mut ChatFile) -> Result<(), TransformError> {
-        for line in file.lines.iter_mut() {
+        for line in file.lines.as_mut_slice().iter_mut() {
             if let Line::Utterance(utterance) = line
                 && utterance.main.content.terminator.is_none()
             {
                 utterance.main.content.terminator = Some(Terminator::Period {
-                    span: talkbank_model::Span::DUMMY,
+                    location: talkbank_model::Location::Unlocated,
                 });
             }
         }

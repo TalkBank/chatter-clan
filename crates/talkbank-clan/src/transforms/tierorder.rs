@@ -25,7 +25,7 @@
 //! - Sorts using typed `DependentTier` variants with a numeric key function
 //!   instead of matching raw `%`-prefixed line text.
 
-use talkbank_model::{ChatFile, DependentTier, Line};
+use talkbank_model::{ChatFile, DependentTier, DependentTierEntry, Line};
 
 use crate::framework::{TransformCommand, TransformError};
 
@@ -37,7 +37,7 @@ impl TransformCommand for TierorderCommand {
 
     /// Sort dependent tiers on each utterance according to canonical order.
     fn transform(&self, file: &mut ChatFile) -> Result<(), TransformError> {
-        for line in file.lines.iter_mut() {
+        for line in file.lines.as_mut_slice().iter_mut() {
             if let Line::Utterance(utt) = line
                 && utt.dependent_tiers.len() > 1
             {
@@ -49,8 +49,8 @@ impl TransformCommand for TierorderCommand {
 }
 
 /// Sort dependent tiers according to canonical order.
-fn sort_tiers(tiers: &mut smallvec::SmallVec<[DependentTier; 3]>) {
-    tiers.sort_by_key(tier_order);
+fn sort_tiers(tiers: &mut smallvec::SmallVec<[DependentTierEntry; 3]>) {
+    tiers.sort_by_key(|entry| tier_order(&entry.tier));
 }
 
 /// Return a numeric sort key for canonical tier ordering.
@@ -97,56 +97,73 @@ fn tier_order(tier: &DependentTier) -> u32 {
         DependentTier::UserDefined(_) => 100,
         // Unsupported tiers after user-defined
         DependentTier::Unsupported(_) => 101,
+        DependentTier::UnparsedMor(_) => 0,
+        DependentTier::UnparsedGra(_) => 1,
+        DependentTier::UnparsedPho(_) => 2,
+        DependentTier::UnparsedMod(_) => 3,
+        DependentTier::UnparsedWor(_) => 4,
+        DependentTier::UnparsedSin(_) => 5,
+        DependentTier::UnparsedPhoaln(_) => 8,
+        DependentTier::UnparsedXphoint(_) => 9,
+        DependentTier::UnparsedText(_) => 102,
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use talkbank_model::Span;
-    use talkbank_model::{
-        MainTier, NonEmptyString, Terminator, TextTier, Utterance, UtteranceContent, Word,
-    };
+    use talkbank_model::{RecoveryText, TextTier, Utterance, UtteranceContent};
 
     fn make_utterance_with_tiers(tiers: Vec<DependentTier>) -> Utterance {
-        let content = vec![UtteranceContent::Word(Box::new(Word::simple("hello")))];
-        let main = MainTier::new("CHI", content, Terminator::Period { span: Span::DUMMY });
+        let content = vec![UtteranceContent::Word(Box::new(crate::test_support::word(
+            "hello",
+        )))];
+        let main = crate::test_support::main_tier("CHI", content);
         let mut utt = Utterance::new(main);
         for t in tiers {
-            utt.dependent_tiers.push(t);
+            utt.dependent_tiers.push(t.into());
         }
         utt
     }
 
     #[test]
     fn sorts_tiers_canonically() {
-        let eng = DependentTier::Eng(TextTier::new(NonEmptyString::new("hello").unwrap()));
-        let alt = DependentTier::Alt(TextTier::new(NonEmptyString::new("hi").unwrap()));
+        let eng = DependentTier::Eng(TextTier::new(
+            talkbank_model::Location::Unlocated,
+            RecoveryText::new("hello").unwrap(),
+        ));
+        let alt = DependentTier::Alt(TextTier::new(
+            talkbank_model::Location::Unlocated,
+            RecoveryText::new("hi").unwrap(),
+        ));
 
         // Insert in reverse order
         let mut utt = make_utterance_with_tiers(vec![eng, alt]);
         sort_tiers(&mut utt.dependent_tiers);
 
         // Alt (20) should come before Eng (23)
-        assert!(matches!(utt.dependent_tiers[0], DependentTier::Alt(_)));
-        assert!(matches!(utt.dependent_tiers[1], DependentTier::Eng(_)));
+        assert!(matches!(utt.dependent_tiers[0].tier, DependentTier::Alt(_)));
+        assert!(matches!(utt.dependent_tiers[1].tier, DependentTier::Eng(_)));
     }
 
     #[test]
     fn user_defined_tiers_sort_last() {
-        let alt = DependentTier::Alt(TextTier::new(NonEmptyString::new("hi").unwrap()));
+        let alt = DependentTier::Alt(TextTier::new(
+            talkbank_model::Location::Unlocated,
+            RecoveryText::new("hi").unwrap(),
+        ));
         let xmor = DependentTier::UserDefined(talkbank_model::UserDefinedDependentTier {
-            label: NonEmptyString::new("xmor").unwrap(),
-            content: NonEmptyString::new("custom").unwrap(),
-            span: Span::DUMMY,
+            label: talkbank_model::UserDefinedDependentTierLabel::new("xmor").unwrap(),
+            content: RecoveryText::new("custom").ok(),
+            location: talkbank_model::Location::Unlocated,
         });
 
         let mut utt = make_utterance_with_tiers(vec![xmor, alt]);
         sort_tiers(&mut utt.dependent_tiers);
 
-        assert!(matches!(utt.dependent_tiers[0], DependentTier::Alt(_)));
+        assert!(matches!(utt.dependent_tiers[0].tier, DependentTier::Alt(_)));
         assert!(matches!(
-            utt.dependent_tiers[1],
+            utt.dependent_tiers[1].tier,
             DependentTier::UserDefined(_)
         ));
     }

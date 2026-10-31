@@ -14,9 +14,9 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409207
 ## Usage
 
 ```bash
-chatter clan keymap file.cha --keyword code1 --keyword code2
-chatter clan keymap file.cha --keyword code1 --tier spa
-chatter clan keymap file.cha -k code1 -k code2          # short form
+chatter-clan keymap file.cha --keyword code1 --keyword code2
+chatter-clan keymap file.cha --keyword code1 --tier spa
+chatter-clan keymap file.cha -k code1 -k code2          # short form
 ```
 
 ## Options (chatter-native)

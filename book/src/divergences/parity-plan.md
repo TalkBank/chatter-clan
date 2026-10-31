@@ -17,7 +17,7 @@ Started at 74% (88/118). Fixed 25 divergences across 10 commands:
 | VOCD | 4 → 0 | Echo %mor lemmas (stripped fusional), insufficient tokens |
 | WDLEN | 4 → 0 | 6-section format, Brown's morphemes, POS-inclusive section 6, apostrophe stripping, reversed speaker order, XML footer |
 | UNIQ | 3 → 1 | Include %mor/%gra tiers, split multi-line headers |
-| CHIP | 4 → 0 | 36-measure CLAN matrix format (main + %mor echo, no %gra) |
+| CHIP | Initial 4 → 0 implementation pass | Matrix, typed role/window/substitution scoring, and main + `%mor` echo are implemented; option coverage and byte-parity remain open (see [CHIP status](../commands/chip.md)) |
 
 ## Remaining Divergences (5), All Accepted
 

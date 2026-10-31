@@ -10,7 +10,7 @@ Converts between Praat TextGrid files and CHAT format. TextGrid files contain ti
 ## Usage
 
 ```bash
-chatter clan praat2chat input.TextGrid
+chatter-clan praat2chat input.TextGrid
 ```
 
 ## Conversion Functions

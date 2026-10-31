@@ -12,9 +12,9 @@ EVAL uses AphasiaBank norms; EVAL-D uses DementiaBank norms.
 ## Usage
 
 ```bash
-chatter clan eval-d file.cha
-chatter clan eval-d --speaker PAR file.cha
-chatter clan eval-d --format json file.cha
+chatter-clan eval-d file.cha
+chatter-clan eval-d --speaker PAR file.cha
+chatter-clan eval-d --format json file.cha
 ```
 
 ## Options

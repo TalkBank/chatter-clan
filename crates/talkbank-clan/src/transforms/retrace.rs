@@ -20,7 +20,10 @@
 //!   (AST → text), ensuring the preserved text is structurally faithful
 //!   rather than copying raw input lines that may have formatting quirks.
 
-use talkbank_model::{ChatFile, DependentTier, Line, NonEmptyString, UserDefinedDependentTier};
+use talkbank_model::{
+    ChatFile, DependentTier, Line, Location, RecoveryText, UserDefinedDependentTier,
+    UserDefinedDependentTierLabel,
+};
 
 use crate::framework::{TransformCommand, TransformError};
 
@@ -30,24 +33,24 @@ pub struct RetraceCommand;
 impl TransformCommand for RetraceCommand {
     type Config = ();
 
-    /// Insert `%ret:` tiers containing verbatim serialized main-tier content.
+    /// Insert `%xret:` tiers containing verbatim serialized main-tier content.
     fn transform(&self, file: &mut ChatFile) -> Result<(), TransformError> {
-        for line in file.lines.iter_mut() {
+        for line in file.lines.as_mut_slice().iter_mut() {
             if let Line::Utterance(utterance) = line {
                 let content = utterance.main.content.to_content_string();
 
-                if let Some(content) = NonEmptyString::new(&content) {
-                    // "ret" is a compile-time-non-empty literal,
-                    // `NonEmptyString::new` cannot return `None`.
-                    #[allow(clippy::expect_used)]
+                if let Ok(content) = RecoveryText::new(&content) {
+                    let label = UserDefinedDependentTierLabel::new("xret").map_err(|e| {
+                        TransformError::Transform(format!("invalid tier label: {e}"))
+                    })?;
                     let ret_tier = DependentTier::UserDefined(UserDefinedDependentTier {
-                        label: NonEmptyString::new("ret").expect("label is non-empty"),
-                        content,
-                        span: talkbank_model::Span::DUMMY,
+                        label,
+                        content: Some(content),
+                        location: Location::Unlocated,
                     });
 
-                    // Insert %ret right after the main tier (before other dependent tiers)
-                    utterance.dependent_tiers.insert(0, ret_tier);
+                    // Insert %xret right after the main tier (before other dependent tiers)
+                    utterance.dependent_tiers.insert(0, ret_tier.into());
                 }
             }
         }

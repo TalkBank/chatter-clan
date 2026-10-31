@@ -12,9 +12,9 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409287
 ## Usage
 
 ```bash
-chatter clan sugar file.cha
-chatter clan sugar --speaker CHI file.cha
-chatter clan sugar --format json file.cha
+chatter-clan sugar file.cha
+chatter-clan sugar --speaker CHI file.cha
+chatter-clan sugar --format json file.cha
 ```
 
 ## Options (chatter-native)

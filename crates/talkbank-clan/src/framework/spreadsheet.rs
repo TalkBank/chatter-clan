@@ -8,7 +8,7 @@
 //!
 //! ## Parity standard: semantic equivalence, not byte equality
 //!
-//! Per `crates/talkbank-clan/CLAUDE.md`, spreadsheet parity is judged on the
+//! Per `crates/talkbank-clan/AGENTS.md`, spreadsheet parity is judged on the
 //! **parsed cells** (sheet name, headers, rows, cell values and their
 //! String-vs-Number type), NOT on byte-identical XML. CLAN's `.xls` carries
 //! window-geometry and styling boilerplate that is not semantically meaningful;

@@ -14,7 +14,7 @@ The computed age uses CHAT format: `years;months.days` (e.g., `2;6.15` for two y
 ## Usage
 
 ```bash
-chatter clan dates file.cha
+chatter-clan dates file.cha
 ```
 
 ## Options

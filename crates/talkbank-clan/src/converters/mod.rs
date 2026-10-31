@@ -22,6 +22,7 @@
 //! | [`srt2chat`] | SRT --> CHAT | SRT subtitle import with timing |
 //! | [`text2chat`] | Text --> CHAT | Plain text import (sentence splitting) |
 
+mod build;
 pub mod chat2elan;
 pub mod chat2srt;
 pub mod chat2text;

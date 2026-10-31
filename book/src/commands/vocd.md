@@ -12,9 +12,9 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409241
 ## Usage
 
 ```bash
-chatter clan vocd file.cha
-chatter clan vocd --speaker CHI file.cha
-chatter clan vocd --format json file.cha
+chatter-clan vocd file.cha
+chatter-clan vocd --speaker CHI file.cha
+chatter-clan vocd --format json file.cha
 ```
 
 ## Options (chatter-native)
@@ -78,7 +78,7 @@ analysis tool, dominated by the D_optimum sampling parameters.
 | `+rN` | Retrace / clitic / prosodic controls | `--include-retracings` (`+r6`) | Partial | |
 | `+u` | Combine across files | (default) | Done | |
 | `+re` | Recurse | (default) | Done | |
-| `+k` | Case-fold toggle: VOCD preserves case by default, `+k` folds to lowercase | `--case-sensitive` (carries `+k`) | Done | VOCD is in CLAN's `mmaininit` `nomap=TRUE` set (cutt.cpp:7845), so it PRESERVES case by default; `+k` TOGGLES `nomap` (cutt.cpp:13816) to fold, collapsing case variants before the D-statistic sampler. INVERSE of the fold-by-default commands; chatter sets VOCD's `case_sensitive` keying to `!(+k present)`. VOCD output is non-deterministic (random sampling), so this is pinned by the deterministic token-case tests `vocd_default_preserves_case_in_tokens` and `vocd_plus_k_folds_case_in_tokens`, not a byte golden. |
+| `+k` | Case-fold toggle: VOCD preserves case by default, `+k` folds to lowercase | `--plus-k` (carries `+k`) | Done | VOCD is in CLAN's `mmaininit` `nomap=TRUE` set (cutt.cpp:7845), so it PRESERVES case by default; `+k` TOGGLES `nomap` (cutt.cpp:13816) to fold, collapsing case variants before the D-statistic sampler. INVERSE of the fold-by-default commands; chatter sets VOCD's `case_sensitive` keying to `!(+k present)`. VOCD output is non-deterministic (random sampling), so this is pinned by the deterministic token-case tests `vocd_default_preserves_case_in_tokens` and `vocd_plus_k_folds_case_in_tokens`, not a byte golden. |
 | `+f` / `+fEXT` | Output to file | `--output-ext` (rewriter target) | Rewriter only | |
 
 ### Audit summary
@@ -103,8 +103,8 @@ Phase 1.7 follow-ups.
 
 | CLAN command | Rust equivalent |
 |---|---|
-| `vocd file.cha` | `chatter clan vocd file.cha` |
-| `vocd +t*CHI file.cha` | `chatter clan vocd file.cha --speaker CHI` |
+| `vocd file.cha` | `chatter-clan vocd file.cha` |
+| `vocd +t*CHI file.cha` | `chatter-clan vocd file.cha --speaker CHI` |
 
 ## Algorithm
 

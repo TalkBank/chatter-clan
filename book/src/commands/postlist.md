@@ -24,7 +24,7 @@ worker's debug logging, or operate on the typed `Mor` values in the
 
 ## Behavior
 
-Invoking `chatter clan postlist` prints an error and exits non-zero.
+Invoking `chatter-clan postlist` prints an error and exits non-zero.
 
 ## See also
 

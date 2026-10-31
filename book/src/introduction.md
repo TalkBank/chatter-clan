@@ -1,17 +1,14 @@
 # CLAN Command Reference
 
 **Status:** Current
-**Last modified:** 2026-06-13 16:25 EDT
+**Last modified:** 2026-10-31
 
-> **`chatter clan` is EXPERIMENTAL and in active development. No single
-> CLAN command yet achieves byte-for-byte CLAN parity.** If you are
-> migrating from legacy CLAN and need bit-exact output today, you must
-> keep running legacy CLAN. See **[Parity Status](parity-status.md)** for
-> the honest current snapshot, the active command (FREQ), and how "done"
-> is defined. The `chatter clan --help` output carries the same
-> `[EXPERIMENTAL]` label.
+> **`chatter-clan` is active, and parity work is incomplete.** Do not assume
+> that every command or option matches legacy CLAN. Use the
+> [parity status](parity-status.md) for the dated evidence and its freshness
+> limits; use legacy CLAN when you require behavior not verified there.
 
-**CLAN** (Computerized Language Analysis) is a suite of commands for analyzing transcripts in [CHAT format](https://talkbank.org/0info/manuals/CHAT.html) (Codes for the Human Analysis of Transcripts). This book documents the Rust reimplementation of CLAN, invoked via the `chatter clan` command.
+**CLAN** (Computerized Language Analysis) is a suite of commands for analyzing transcripts in [CHAT format](https://talkbank.org/0info/manuals/CHAT.html) (Codes for the Human Analysis of Transcripts). This book documents the Rust reimplementation of CLAN, invoked via the `chatter-clan` command.
 
 ## Relationship to the legacy CLAN manual
 
@@ -61,11 +58,11 @@ When the Rust implementation differs from the legacy binary, this book tries to 
 
 ```bash
 # Word frequency for the CHI speaker
-chatter clan freq --speaker CHI transcript.cha
+chatter-clan freq --speaker CHI transcript.cha
 
 # Mean length of utterance (JSON output)
-chatter clan mlu --format json transcript.cha
+chatter-clan mlu --format json transcript.cha
 
 # Convert ELAN annotation to CHAT
-chatter clan elan2chat recording.eaf
+chatter-clan elan2chat recording.eaf
 ```

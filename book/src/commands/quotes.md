@@ -12,7 +12,7 @@ This is a relatively uncommon command used for discourse analysis of reported sp
 ## Usage
 
 ```bash
-chatter clan quotes file.cha
+chatter-clan quotes file.cha
 ```
 
 ## Options

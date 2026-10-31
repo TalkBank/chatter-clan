@@ -12,7 +12,7 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409309
 ## Usage
 
 ```bash
-chatter clan chstring --changes changes.cut file.cha
+chatter-clan chstring --changes changes.cut file.cha
 ```
 
 ## Options
@@ -76,7 +76,7 @@ find_text2
 replace_text2
 ```
 
-The file must have an even number of non-empty lines. CLAN looks for `changes.cut` in the current directory by default; `chatter clan chstring` requires the path to be passed explicitly via `--changes`.
+The file must have an even number of non-empty lines. CLAN looks for `changes.cut` in the current directory by default; `chatter-clan chstring` requires the path to be passed explicitly via `--changes`.
 
 ## Behavior
 

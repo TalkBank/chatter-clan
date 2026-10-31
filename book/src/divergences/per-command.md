@@ -1,9 +1,9 @@
 # Per-Command Divergences
 
 **Status:** Current
-**Last updated:** 2026-06-04 19:08 EDT
+**Last updated:** 2026-10-31
 
-This page documents every known divergence between the Rust `chatter clan` commands and the original CLAN C binaries. Divergences are verified through golden tests that compare output character-by-character.
+This page documents every known divergence between the Rust `chatter-clan` commands and the original CLAN C binaries. Divergences are verified through golden tests that compare output character-by-character.
 
 **9 accepted CLAN-bug divergences across 3 commands (DELIM, UNIQ, FREQ); each
 is a deliberate, source-and-manual-grounded out-correction, not a parity gap.**
@@ -12,11 +12,13 @@ is a deliberate, source-and-manual-grounded out-correction, not a parity gap.**
 
 | Status | Commands |
 |--------|----------|
-| **100% parity** | MLU, MLT, VOCD, CHIP, DIST, MAXWD, TIMEDUR, WDLEN |
-| **Verified** | DSS, EVAL, KIDEVAL, IPSYN, FLUCALC, SUGAR, CHAINS, CODES, COMBO, COOCCUR, FREQPOS, GEMLIST, KEYMAP, MODREP, MORTABLE, PHONFREQ, RELY, SCRIPT, TRNFIX, CHSTRING, FLO, POSTMORTEM |
+| **Implemented; parity not established** | CHIP |
+| **Golden-tested; not byte-parity certified** | MLU, MLT, VOCD, DIST, MAXWD, TIMEDUR, WDLEN, DSS, EVAL, KIDEVAL, IPSYN, FLUCALC, SUGAR, CHAINS, CODES, COMBO, COOCCUR, FREQPOS, GEMLIST, KEYMAP, MODREP, MORTABLE, PHONFREQ, RELY, SCRIPT, TRNFIX, CHSTRING, FLO, POSTMORTEM |
 | **Accepted divergences** | DELIM (4), UNIQ (1), FREQ (4) |
 
-"Verified" means golden tests pass but character-level parity has not been exhaustively confirmed across all edge cases.
+Golden-tested means the command has golden coverage; it does not establish
+byte-for-byte parity. The generated [parity status](../parity-status.md) is the
+authority for byte-parity evidence, and currently establishes it for no command.
 
 ---
 
@@ -89,7 +91,7 @@ the printf un-doubling its stdout path performs), so the cell text reads
   `freq_d3_spreadsheet_manchester`, and `freq_d_percent_lt_eq_manchester`
   goldens (`ParityExpectation::DivergesFromClan`); the committed golden holds
   chatter's corrected SpreadsheetML. Spreadsheet parity is judged on semantic
-  cell equivalence (`talkbank-clan/CLAUDE.md`), not byte-identical XML. The
+  cell equivalence (`talkbank-clan/AGENTS.md`), not byte-identical XML. The
   `+dCN` data cells (the `@ID` columns, the `Speaker` header, and the
   percent-filtered Types/Token/TTR) were verified byte-identical to CLAN's
   `words.frq.xls` on a live run, the same as `+d2`/`+d3`.
@@ -235,9 +237,18 @@ invalid-UTF-8 byte pairs `0x80 0xA1` (‡) and `0x80 0x9E` („) as the "word ty
 
 ### CHIP -- Child/Parent Interaction Profile
 
-- **36-measure matrix format** matching CLAN exactly (ADU/CHI/ASR/CSR columns).
-- **Echo**: Main tier + %mor only (not %gra tiers), matching CLAN.
-- **Parity: 100%**
+- Implements role assignment, rolling-window scoring, substitution mode, and
+  main-tier/`%mor` word-source selection; see the [CHIP command page](../commands/chip.md).
+- Preserves case by default; `+k` folds word-stem comparisons while retaining
+  original spelling for output codes.
+- Echoes main and `%mor` tiers only; other dependent tiers are omitted.
+- `-hFILE` supports exact and `*` wildcard patterns against either paired
+  surface or `%mor` forms; other CLAN selector syntax is rejected. Main-tier
+  mode bypasses merged-tier exclusions. `+dN` display modes remain unimplemented.
+- Uses Chatter's typed UD `%mor`, not legacy CLAN morphology. A failed
+  main-to-`%mor` alignment rejects the file rather than fabricating scores.
+- Focused unit tests pass. The existing bare-invocation golden does not cover
+  CHIP options, so byte-for-byte option parity is not established.
 
 ### CODES -- Code Frequency
 

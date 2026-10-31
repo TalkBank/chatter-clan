@@ -12,8 +12,8 @@ In CHAT format, long tiers are conventionally wrapped with a newline followed by
 ## Usage
 
 ```bash
-chatter clan longtier file.cha
-chatter clan longtier file.cha -o unwrapped.cha
+chatter-clan longtier file.cha
+chatter-clan longtier file.cha -o unwrapped.cha
 ```
 
 ## Behavior

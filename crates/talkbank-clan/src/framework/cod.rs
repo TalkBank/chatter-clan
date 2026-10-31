@@ -63,6 +63,8 @@ pub fn cod_semantic_tier(tier: &CodTier) -> CodSemanticTier {
                     }
                 }
             }
+            // A rejected bullet has no numeric timing to preserve.
+            BulletContentSegment::UnparsedBullet(_) => {}
             BulletContentSegment::Bullet(bullet) => {
                 if let Some(target) = pending_target.take() {
                     elements.push(CodSemanticElement::BareTarget(target));
@@ -115,7 +117,7 @@ mod tests {
 
     #[test]
     fn cod_semantics_assign_selector_to_next_value() {
-        let tier = CodTier::from_text("<w5> dawn <wl> $WR");
+        let tier = crate::test_support::cod_tier("<w5> dawn <wl> $WR");
         let semantic = cod_semantic_tier(&tier);
         assert_eq!(
             semantic.elements,
@@ -134,7 +136,7 @@ mod tests {
 
     #[test]
     fn cod_semantics_preserve_bare_target() {
-        let tier = CodTier::from_text("<w4>");
+        let tier = crate::test_support::cod_tier("<w4>");
         let semantic = cod_semantic_tier(&tier);
         assert_eq!(
             semantic.elements,
@@ -144,14 +146,17 @@ mod tests {
 
     #[test]
     fn cod_semantics_preserve_bullets() {
-        let tier = CodTier::new(BulletContent {
-            segments: vec![
-                BulletContentSegment::text("$UNK "),
-                BulletContentSegment::bullet(10, 20),
-                BulletContentSegment::text("$na"),
-            ]
-            .into(),
-        });
+        let tier = CodTier::new(
+            talkbank_model::Location::Unlocated,
+            BulletContent {
+                segments: vec![
+                    BulletContentSegment::text("$UNK "),
+                    BulletContentSegment::bullet(10, 20),
+                    BulletContentSegment::text("$na"),
+                ]
+                .into(),
+            },
+        );
         let semantic = cod_semantic_tier(&tier);
         assert_eq!(
             semantic.elements,

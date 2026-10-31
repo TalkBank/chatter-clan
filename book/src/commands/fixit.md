@@ -10,8 +10,8 @@ Normalizes CHAT file formatting by re-serializing through the parser. Fixes inco
 ## Usage
 
 ```bash
-chatter clan fixit file.cha
-chatter clan fixit file.cha -o normalized.cha
+chatter-clan fixit file.cha
+chatter-clan fixit file.cha -o normalized.cha
 ```
 
 ## Behavior

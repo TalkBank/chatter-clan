@@ -10,7 +10,7 @@ These differences apply across all commands, not to specific ones.
 | Aspect | Legacy CLAN | Rust CLAN |
 |--------|-------------|-----------|
 | Flag style | `+flag` / `-flag` | `--flag` (both styles accepted) |
-| Invocation | `freq file.cha` | `chatter clan freq file.cha` |
+| Invocation | `freq file.cha` | `chatter-clan freq file.cha` |
 | Directory | Manual file listing or `*.cha` | Recursive directory traversal |
 | Output format | Text only | Text, JSON, CSV |
 | Error output | Simple messages to stderr | Rich diagnostics with file location and context |
@@ -52,7 +52,7 @@ The CLAN parity contract is byte-level output equivalence on file-arg
 invocations. Within that contract, the parity work has surfaced
 behaviours where CLAN's output is internally inconsistent or
 inadvertently doubled, visible plumbing artifacts rather than
-intended product. `chatter clan` preserves the *intended* behaviour
+intended product. `chatter-clan` preserves the *intended* behaviour
 and documents the divergence here rather than reproducing the
 artifact.
 

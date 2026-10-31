@@ -12,10 +12,10 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409276
 ## Usage
 
 ```bash
-chatter clan ipsyn file.cha
-chatter clan ipsyn --speaker CHI file.cha
-chatter clan ipsyn --rules ipsyn.rules file.cha
-chatter clan ipsyn --max-utterances 100 file.cha
+chatter-clan ipsyn file.cha
+chatter-clan ipsyn --speaker CHI file.cha
+chatter-clan ipsyn --rules ipsyn.rules file.cha
+chatter-clan ipsyn --max-utterances 100 file.cha
 ```
 
 ## Options (chatter-native)

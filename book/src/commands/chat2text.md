@@ -12,8 +12,8 @@ Converts CHAT files into plain text lines suitable for downstream text analysis.
 ## Usage
 
 ```bash
-chatter clan chat2text file.cha
-chatter clan chat2text --include-speaker file.cha
+chatter-clan chat2text file.cha
+chatter-clan chat2text --include-speaker file.cha
 ```
 
 ## Options

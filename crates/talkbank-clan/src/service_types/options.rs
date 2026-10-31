@@ -2,7 +2,36 @@
 
 use std::path::PathBuf;
 
+use crate::commands::chip::ChipCaseMode;
+use crate::commands::mlu::MluOutputMode;
+use crate::framework::WordPattern;
+
 use super::AnalysisCommandName;
+
+/// CHIP-specific raw input.
+#[derive(Debug, Clone, Default)]
+pub struct ChipOptions {
+    /// Adult speaker codes supplied with `+b`.
+    pub adults: Vec<String>,
+    /// Child speaker codes supplied with `+c`.
+    pub children: Vec<String>,
+    /// Enable same-part-of-speech substitutions (`+g`).
+    pub substitution: bool,
+    /// Read main-tier words instead of `%mor` (`-t%mor`).
+    pub main_tier: bool,
+    /// Utterance window (`+qN`).
+    pub window: Option<u8>,
+    /// Minimum source words (`+wN`).
+    pub min_words: Option<usize>,
+    /// Minimum repetition index (`+xN`).
+    pub min_index: Option<f64>,
+    /// Disabled measure groups (`-nb`, `-nc`, `-ns`).
+    pub disabled_scoring: Vec<String>,
+    /// Case mode for word-stem comparisons (`+k` folds CHIP's default).
+    pub case_mode: ChipCaseMode,
+    /// Word-list patterns loaded from CHIP's `-hFILE`.
+    pub exclusion_patterns: Vec<WordPattern>,
+}
 
 /// FREQ-specific raw input. See [`AnalysisOptions`].
 #[derive(Debug, Clone, Default)]
@@ -67,6 +96,8 @@ pub struct FreqOptions {
 /// MLU-specific raw input.
 #[derive(Debug, Clone, Default)]
 pub struct MluOptions {
+    /// Normal summary or CLAN `+d1` ID-row output.
+    pub output_mode: MluOutputMode,
     /// Count words instead of morphemes.
     pub words: bool,
     /// CLAN `+gS`: drop utterances consisting solely of these words.
@@ -361,8 +392,8 @@ pub enum AnalysisOptions {
     Cooccur(CooccurOptions),
     /// DIST.
     Dist(DistOptions),
-    /// CHIP, no input options.
-    Chip,
+    /// CHIP.
+    Chip(ChipOptions),
     /// PHONFREQ, no input options.
     Phonfreq,
     /// MODREP, no input options.
@@ -424,7 +455,7 @@ impl AnalysisOptions {
             AnalysisOptions::Combo(_) => AnalysisCommandName::Combo,
             AnalysisOptions::Cooccur(_) => AnalysisCommandName::Cooccur,
             AnalysisOptions::Dist(_) => AnalysisCommandName::Dist,
-            AnalysisOptions::Chip => AnalysisCommandName::Chip,
+            AnalysisOptions::Chip(_) => AnalysisCommandName::Chip,
             AnalysisOptions::Phonfreq => AnalysisCommandName::Phonfreq,
             AnalysisOptions::Modrep => AnalysisCommandName::Modrep,
             AnalysisOptions::Vocd(_) => AnalysisCommandName::Vocd,

@@ -25,7 +25,7 @@ use std::io::{self, Write as IoWrite};
 use std::path::Path;
 
 use talkbank_model::ParseValidateOptions;
-use talkbank_model::{ChatFile, WriteChat};
+use talkbank_model::{Bullet, BulletState, ChatFile, WriteChat};
 
 /// Errors that can occur during file transformation.
 #[derive(Debug, thiserror::Error)]
@@ -41,6 +41,34 @@ pub enum TransformError {
     /// Transform-specific error (command logic failure)
     #[error("Transform error: {0}")]
     Transform(String),
+}
+
+/// Numeric timing of a bullet, or an error when the bullet failed to parse.
+///
+/// An unparsed bullet carries no timing, so callers must not substitute one.
+pub fn parsed_bullet(state: &BulletState) -> Result<&Bullet, TransformError> {
+    state.as_parsed().ok_or_else(unparsed_bullet_error)
+}
+
+/// Mutable counterpart of [`parsed_bullet`].
+pub fn parsed_bullet_mut(state: &mut BulletState) -> Result<&mut Bullet, TransformError> {
+    state.as_parsed_mut().ok_or_else(unparsed_bullet_error)
+}
+
+/// Replace a word's content with plain text, rejecting empty replacement text.
+pub fn replace_word_text(
+    word: &mut talkbank_model::Word,
+    text: &str,
+) -> Result<(), TransformError> {
+    let text = talkbank_model::WordText::new(text).map_err(|e| {
+        TransformError::Transform(format!("invalid replacement word {text:?}: {e}"))
+    })?;
+    word.replace_simple_text(text);
+    Ok(())
+}
+
+fn unparsed_bullet_error() -> TransformError {
+    TransformError::Transform("media bullet is unparsed and carries no timing".to_owned())
 }
 
 /// Trait that all file-transforming CLAN commands implement.

@@ -12,10 +12,10 @@ Repairs timing bullets that link CHAT to audio or video. The legacy manual descr
 ## Usage
 
 ```bash
-chatter clan fixbullets file.cha
-chatter clan fixbullets file.cha --offset 800
-chatter clan fixbullets file.cha --tier cod
-chatter clan fixbullets file.cha --exclude-tier com
+chatter-clan fixbullets file.cha
+chatter-clan fixbullets file.cha --offset 800
+chatter-clan fixbullets file.cha --tier cod
+chatter-clan fixbullets file.cha --exclude-tier com
 ```
 
 ## Options

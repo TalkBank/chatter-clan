@@ -38,13 +38,16 @@ fn is_verb_detects_verbs() {
 
 #[test]
 fn count_clauses_basic() {
-    let gra = talkbank_model::GraTier::new_gra(vec![
-        talkbank_model::GrammaticalRelation::new(1, 2, "SUBJ"),
-        talkbank_model::GrammaticalRelation::new(2, 0, "ROOT"),
-        talkbank_model::GrammaticalRelation::new(3, 2, "OBJ"),
-        talkbank_model::GrammaticalRelation::new(4, 2, "COMP"),
-        talkbank_model::GrammaticalRelation::new(5, 4, "SUBJ"),
-    ]);
+    let gra = talkbank_model::GraTier::new_gra(
+        talkbank_model::Location::Unlocated,
+        vec![
+            crate::test_support::rel(1, 2, "SUBJ"),
+            crate::test_support::rel(2, 0, "ROOT"),
+            crate::test_support::rel(3, 2, "OBJ"),
+            crate::test_support::rel(4, 2, "COMP"),
+            crate::test_support::rel(5, 4, "SUBJ"),
+        ],
+    );
     assert_eq!(count_clauses_from_gra(&gra), 1);
 }
 

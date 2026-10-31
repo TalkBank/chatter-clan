@@ -12,7 +12,7 @@
 //!
 //! | CLAN command | Rust equivalent |
 //! |---|---|
-//! | N/A (no direct CLAN equivalent) | `chatter clan chat2text file.cha` |
+//! | N/A (no direct CLAN equivalent) | `chatter-clan chat2text file.cha` |
 //!
 //! # Differences from CLAN
 //!

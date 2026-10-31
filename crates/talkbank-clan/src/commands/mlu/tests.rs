@@ -1,8 +1,7 @@
 use super::*;
 use crate::framework::{CommandOutput, FileContext};
-use talkbank_model::Span;
 use talkbank_model::model::content::word::UntranscribedStatus;
-use talkbank_model::{MainTier, Terminator, Utterance, UtteranceContent, Word};
+use talkbank_model::{Utterance, UtteranceContent};
 
 /// Build an `MluResult` carrying a single speaker plus the given re-included
 /// untranscribed statuses, for exercising the CLAN exclusion-header variants.
@@ -19,13 +18,14 @@ fn result_with_re_included(re_included: Vec<UntranscribedStatus>) -> MluResult {
         }],
         combine_speakers: false,
         re_included_untranscribed: re_included,
+        id_rows: None,
     }
 }
 
 /// All three CLAN exclusion-header variants (mlu.cpp:246-253), keyed on which of
 /// `+sxxx`/`+syyy` are active. Strings are verbatim from CLAN source. `+syyy`
 /// alone (and the default) use the same default line because CLAN has NO
-/// yyy-only header branch, reproduced here as the `chatter clan` parity oracle.
+/// yyy-only header branch, reproduced here as the `chatter-clan` parity oracle.
 #[test]
 fn mlu_clan_exclusion_header_variants() {
     use UntranscribedStatus::{Phonetic, Unintelligible};
@@ -72,9 +72,9 @@ fn mlu_clan_exclusion_header_variants() {
 fn make_utterance(speaker: &str, words: &[&str]) -> Utterance {
     let content: Vec<UtteranceContent> = words
         .iter()
-        .map(|w| UtteranceContent::Word(Box::new(Word::simple(*w))))
+        .map(|w| UtteranceContent::Word(Box::new(crate::test_support::word(*w))))
         .collect();
-    let main = MainTier::new(speaker, content, Terminator::Period { span: Span::DUMMY });
+    let main = crate::test_support::main_tier(speaker, content);
     Utterance::new(main)
 }
 
@@ -155,6 +155,7 @@ fn mlu_solo_word_exclusion_drops_solo_um() {
         solo_word_exclusions: vec!["um".into()],
         combine_speakers: false,
         re_included_untranscribed: vec![],
+        ..MluConfig::default()
     };
     let command = MluCommand::new(config);
     let mut state = MluState::default();
@@ -197,6 +198,7 @@ fn mlu_solo_word_exclusion_is_case_insensitive() {
         solo_word_exclusions: vec!["UM".into()],
         combine_speakers: false,
         re_included_untranscribed: vec![],
+        ..MluConfig::default()
     };
     let command = MluCommand::new(config);
     let mut state = MluState::default();
@@ -276,6 +278,7 @@ fn mlu_render_text_format() {
         }],
         combine_speakers: false,
         re_included_untranscribed: vec![],
+        id_rows: None,
     };
 
     let text = result.render_text();
@@ -299,6 +302,7 @@ fn mlu_render_clan_format() {
         }],
         combine_speakers: false,
         re_included_untranscribed: vec![],
+        id_rows: None,
     };
 
     let clan = result.render_clan();
@@ -323,6 +327,7 @@ fn mlu_render_clan_zero_utterances() {
         }],
         combine_speakers: false,
         re_included_untranscribed: vec![],
+        id_rows: None,
     };
 
     let clan = result.render_clan();
@@ -347,9 +352,162 @@ fn mlu_render_clan_single_utterance() {
         }],
         combine_speakers: false,
         re_included_untranscribed: vec![],
+        id_rows: None,
     };
 
     let clan = result.render_clan();
     assert!(clan.contains("Ratio of morphemes over utterances = 3.000"));
     assert!(clan.contains("Standard deviation = NA"));
+}
+
+/// Guards: the CLAN ID-row field order and padded numeric output.
+/// Kind: wire
+/// Not a type: another program consumes these rendered column bytes.
+/// State: an owned result fixture with a parsed header and explicit statistics.
+/// Concurrency: none, rendering uses local immutable inputs.
+#[test]
+fn mlu_id_row_renders_ten_id_fields_and_padded_stats() {
+    let id_header = crate::test_support::id_header("eng", "CHI", "Child")
+        .with_corpus("corpus")
+        .with_age("3;00.")
+        .with_sex(talkbank_model::Sex::Female)
+        .with_group("TD")
+        .with_ses(talkbank_model::SesValue::from_text("MC"));
+    let result = MluResult {
+        speakers: vec![],
+        combine_speakers: false,
+        re_included_untranscribed: vec![],
+        id_rows: Some(vec![MluIdRow::Speaker {
+            file: std::path::PathBuf::from("corpus/mor-gra.cha"),
+            id_header: Some(Box::new(id_header)),
+            result: MluSpeakerResult {
+                speaker: "CHI".to_owned(),
+                utterances: 1,
+                morphemes: 6,
+                mlu: 6.0,
+                sd: f64::NAN,
+                min: 6,
+                max: 6,
+            },
+        }]),
+    };
+
+    assert_eq!(
+        result.render_clan(),
+        "corpus/mor-gra.cha\teng\tcorpus\tCHI\t3;00.\tfemale\tTD\tMC\tChild\t.\t.\t    1\t    6\t  6.000\tNA\n"
+    );
+}
+
+/// Guards: SpreadsheetML ID columns and MLU numeric cells.
+/// Kind: wire
+/// Not a type: spreadsheet readers interpret serialized cell kinds and values.
+/// State: a local speaker result and its nonblank ID header.
+/// Concurrency: none, workbook generation is synchronous and isolated.
+#[test]
+fn mlu_spreadsheet_matches_clan_id_columns_and_statistics() {
+    let id_header = crate::test_support::id_header("eng", "CHI", "Child")
+        .with_corpus("corpus")
+        .with_age("3;00.");
+    let result = MluResult {
+        speakers: vec![],
+        combine_speakers: false,
+        re_included_untranscribed: vec![],
+        id_rows: Some(vec![MluIdRow::Speaker {
+            file: std::path::PathBuf::from("corpus/mor-gra.cha"),
+            id_header: Some(Box::new(id_header)),
+            result: MluSpeakerResult {
+                speaker: "CHI".to_owned(),
+                utterances: 1,
+                morphemes: 6,
+                mlu: 6.0,
+                sd: f64::NAN,
+                min: 6,
+                max: 6,
+            },
+        }]),
+    };
+
+    let xml = result
+        .to_spreadsheet("mor-gra.mlu.xls", MluCountUnit::Morphemes)
+        .expect("spreadsheet mode produces file-speaker rows")
+        .write_xml()
+        .expect("workbook serializes");
+    assert!(xml.contains(r#"<Worksheet ss:Name="mor-gra.mlu.xls">"#));
+    assert!(xml.contains(r#"<Data ss:Type="String">Custom_field</Data>"#));
+    assert!(xml.contains(r#"<Data ss:Type="String">#morphemes</Data>"#));
+    assert!(xml.contains(r#"<Data ss:Type="String">morphemes/utterances</Data>"#));
+    assert!(xml.contains(r#"<Data ss:Type="String">mor-gra.cha</Data>"#));
+    assert!(xml.contains(r#"<Data ss:Type="Number">6.000</Data>"#));
+    assert!(xml.contains(r#"<Data ss:Type="String">NA</Data>"#));
+}
+
+#[test]
+fn mlu_spreadsheet_words_mode_uses_clan_missing_id_fallback() {
+    let result = MluResult {
+        speakers: vec![],
+        combine_speakers: false,
+        re_included_untranscribed: vec![],
+        id_rows: Some(vec![MluIdRow::Speaker {
+            file: std::path::PathBuf::from("input.cha"),
+            id_header: None,
+            result: MluSpeakerResult {
+                speaker: "CHI".to_owned(),
+                utterances: 1,
+                morphemes: 3,
+                mlu: 3.0,
+                sd: f64::NAN,
+                min: 3,
+                max: 3,
+            },
+        }]),
+    };
+
+    let xml = result
+        .to_spreadsheet("input.mlu.xls", MluCountUnit::Words)
+        .expect("spreadsheet mode produces file-speaker rows")
+        .write_xml()
+        .expect("workbook serializes");
+    assert!(xml.contains(r#"<Data ss:Type="String">#words</Data>"#));
+    assert!(xml.contains(r#"<Data ss:Type="String">words/utterances</Data>"#));
+    assert!(xml.contains(r#"<Data ss:Type="String">CHI</Data>"#));
+    assert!(xml.contains(r#"<Data ss:Type="Number">3.000</Data>"#));
+}
+
+#[test]
+fn mlu_id_rows_combine_files_and_emit_zero_speaker_rows_for_o3() {
+    let file1 = std::path::PathBuf::from("mor-gra.cha");
+    let file2 = std::path::PathBuf::from("second.cha");
+    let id_header = crate::test_support::id_header("eng", "CHI", "Child").with_corpus("corpus");
+    let speaker = SpeakerCode::from("CHI");
+    let mut state = MluState::default();
+    state.processed_files.extend([file1.clone(), file2.clone()]);
+    state.by_file_speaker.insert(
+        (file1.clone(), speaker.clone()),
+        SpeakerMlu {
+            utterance_lengths: vec![6],
+            id_header: Some(id_header.clone()),
+        },
+    );
+    state.by_file_speaker.insert(
+        (file2, speaker),
+        SpeakerMlu {
+            utterance_lengths: vec![5],
+            id_header: Some(id_header),
+        },
+    );
+
+    let command = MluCommand::new(MluConfig {
+        output_mode: MluOutputMode::IdRowsCombinedFiles,
+        combine_speakers: true,
+        ..MluConfig::default()
+    });
+    let result = command.finalize(state);
+
+    assert_eq!(
+        result.render_clan(),
+        concat!(
+            "mor-gra.cha\teng\tcorpus\tCHI\t.\t.\t.\t.\tChild\t.\t.\t    0\t    0\tNA\tNA\n",
+            "mor-gra.cha\t.\t.\t*COMBINED*\t.\t.\t.\t.\t.\t.\t.\t    2\t   11\t  5.500\t  0.500\n",
+        )
+    );
 }

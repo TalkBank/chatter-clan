@@ -9,6 +9,7 @@
 //! `talkbank-clan`; keep CLI argument mapping and terminal UX here.
 
 use crate::cli::{ClanCommands, FreqposPositionArg};
+use talkbank_clan::commands::chip::ChipCaseMode;
 use talkbank_clan::commands::codes::CodesConfig;
 use talkbank_clan::commands::corelex::CorelexConfig;
 use talkbank_clan::commands::dss::DssConfig;
@@ -20,7 +21,7 @@ use talkbank_clan::commands::maxwd::MaxwdConfig;
 use talkbank_clan::commands::rely::RelyConfig;
 use talkbank_clan::commands::trnfix::TrnfixConfig;
 use talkbank_clan::service_types::{
-    AnalysisCommandName, AnalysisOptions, ChainsOptions, CodesOptions, ComboOptions,
+    AnalysisCommandName, AnalysisOptions, ChainsOptions, ChipOptions, CodesOptions, ComboOptions,
     CorelexOptions, DistOptions, DssOptions, EvalOptions, FlucalcOptions, FreqOptions,
     IpsynOptions, KeymapOptions, KidevalOptions, KwalOptions, MaxwdOptions, MltOptions, MluOptions,
     MortableOptions, RelyOptions, ScriptOptions, SugarOptions, TrnfixOptions, UniqOptions,
@@ -249,14 +250,34 @@ pub(super) fn dispatch(command: ClanCommands) -> Result<(), ClanCommands> {
             mut exclude_solo_word,
             exclude_solo_word_file,
             combine_speakers,
+            id_rows,
+            spreadsheet,
+            combine_files,
             include_xxx,
             include_yyy,
-            common,
+            mut common,
             ..
         } => {
             exclude_solo_word.extend(load_search_expr_files_or_exit(&exclude_solo_word_file));
+            let output_mode = match (id_rows, spreadsheet) {
+                (true, false) if combine_files => {
+                    talkbank_clan::commands::mlu::MluOutputMode::IdRowsCombinedFiles
+                }
+                (true, false) => talkbank_clan::commands::mlu::MluOutputMode::IdRowsPerFile,
+                (false, true) => talkbank_clan::commands::mlu::MluOutputMode::Spreadsheet,
+                (false, false) => talkbank_clan::commands::mlu::MluOutputMode::Summary,
+                (true, true) => super::helpers::exit_with_error(
+                    "Error: --id-rows and --spreadsheet select different MLU output modes."
+                        .to_owned(),
+                ),
+            };
+            if id_rows {
+                common.per_file =
+                    output_mode == talkbank_clan::commands::mlu::MluOutputMode::IdRowsPerFile;
+            }
             run_analysis_and_print(
                 AnalysisOptions::Mlu(MluOptions {
+                    output_mode,
                     words,
                     solo_word_exclusions: exclude_solo_word,
                     combine_speakers,
@@ -437,8 +458,41 @@ pub(super) fn dispatch(command: ClanCommands) -> Result<(), ClanCommands> {
                 &common,
             )
         }
-        ClanCommands::Chip { path, common, .. } => {
-            run_analysis_and_print(AnalysisOptions::Chip, &path, &common);
+        ClanCommands::Chip {
+            path,
+            adults,
+            children,
+            substitution,
+            main_tier,
+            window,
+            min_words,
+            min_index,
+            exclusion_list,
+            disabled_scoring,
+            mut common,
+        } => {
+            common.case_sensitive =
+                AnalysisCommandName::Chip.effective_case_sensitive(common.case_sensitive);
+            let case_mode = ChipCaseMode::from_case_sensitive(common.case_sensitive);
+            let exclusion_files = exclusion_list.into_iter().collect::<Vec<_>>();
+            let exclusion_patterns = super::helpers::collect_word_patterns(&[], &exclusion_files)
+                .unwrap_or_else(|error| super::helpers::exit_with_error(format!("Error: {error}")));
+            run_analysis_and_print(
+                AnalysisOptions::Chip(ChipOptions {
+                    adults,
+                    children,
+                    substitution,
+                    main_tier,
+                    window,
+                    min_words,
+                    min_index,
+                    disabled_scoring,
+                    case_mode,
+                    exclusion_patterns,
+                }),
+                &path,
+                &common,
+            );
         }
         ClanCommands::Phonfreq { path, common, .. } => {
             run_analysis_and_print(AnalysisOptions::Phonfreq, &path, &common);

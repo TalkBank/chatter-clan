@@ -19,12 +19,9 @@
 //! - Newlines are normalized to spaces rather than treated as utterance
 //!   boundaries, which may differ from CLAN's TEXT2CHAT behavior.
 
-use talkbank_model::Span;
-use talkbank_model::{
-    ChatFile, Header, IDHeader, LanguageCode, LanguageCodes, Line, MainTier, ParticipantEntries,
-    ParticipantEntry, ParticipantRole, SpeakerCode, Terminator, Utterance, UtteranceContent, Word,
-};
+use talkbank_model::{ChatFile, Header, Line, ParticipantRole, SpeakerCode, Utterance};
 
+use super::build;
 use crate::framework::TransformError;
 
 /// Convert plain text to a CHAT file with default options.
@@ -44,52 +41,36 @@ pub fn text_to_chat_with_options(
     language: &str,
     corpus: &str,
 ) -> Result<ChatFile, TransformError> {
-    let lang = LanguageCode::new(language);
+    let lang = build::language(language)?;
     let spk = SpeakerCode::new(speaker);
     let role = ParticipantRole::new("Unidentified");
 
-    let mut lines = vec![
-        Line::header(Header::Utf8),
-        Line::header(Header::Begin),
-        Line::header(Header::Languages {
-            codes: LanguageCodes::new(vec![lang.clone()]),
-        }),
-        Line::header(Header::Participants {
-            entries: ParticipantEntries::new(vec![ParticipantEntry {
-                speaker_code: spk.clone(),
-                name: None,
-                role: role.clone(),
-            }]),
-        }),
-        Line::header(Header::ID(
-            IDHeader::new(lang.clone(), spk.clone(), role).with_corpus(corpus),
-        )),
-    ];
+    let mut lines = build::preamble(&lang, &[(spk.clone(), role)], corpus);
 
     // Split content into sentences at sentence-ending punctuation
     let sentences = split_sentences(content);
 
     for (sentence, terminator) in &sentences {
-        let words: Vec<UtteranceContent> = sentence
+        let words = sentence
             .split_whitespace()
-            .map(|w| UtteranceContent::Word(Box::new(Word::simple(w))))
-            .collect();
+            .map(build::word)
+            .collect::<Result<Vec<_>, _>>()?;
 
         if words.is_empty() {
             continue;
         }
 
         let term = match terminator {
-            '?' => Terminator::Question { span: Span::DUMMY },
-            '!' => Terminator::Exclamation { span: Span::DUMMY },
-            _ => Terminator::Period { span: Span::DUMMY },
+            '?' => build::question(),
+            '!' => build::exclamation(),
+            _ => build::period(),
         };
 
-        let main_tier = MainTier::new(spk.clone(), words, term);
+        let main_tier = build::main_tier(spk.clone(), words, term);
         lines.push(Line::utterance(Utterance::new(main_tier)));
     }
 
-    lines.push(Line::header(Header::End));
+    lines.push(build::header(Header::End));
 
     Ok(ChatFile::new(lines))
 }

@@ -12,8 +12,8 @@ This is the reverse of [PRAAT2CHAT](praat2chat.md). Both conversions are impleme
 ## Usage
 
 ```bash
-chatter clan chat2praat file.cha
-chatter clan chat2praat file.cha -o output.TextGrid
+chatter-clan chat2praat file.cha
+chatter-clan chat2praat file.cha -o output.TextGrid
 ```
 
 ## CLAN `+`-flag coverage audit

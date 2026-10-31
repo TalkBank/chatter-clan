@@ -42,6 +42,13 @@ pub(super) fn try_rewrite_clan_flag(
         (b'-', b't') if matches!(subcommand, Mlu | Mlt) && rest == "%mor" => {
             Some(vec!["--words".into()])
         }
+        // CHIP's `-t%mor` selects the main tier rather than a dependent tier.
+        (b'-', b't')
+            if subcommand == Chip
+                && (rest.eq_ignore_ascii_case("%mor") || rest.eq_ignore_ascii_case("%mor:")) =>
+        {
+            Some(vec!["--main-tier".into()])
+        }
 
         // COMBTIER `+tS` (bare-prefix form), tier label to combine,
         // per `OSX-CLAN/src/clan/combtier.cpp` usage
@@ -125,6 +132,10 @@ pub(super) fn try_rewrite_clan_flag(
         // (e.g. `want+cookie`, `want,milk`), distinct from the
         // general per-word `+s` include/exclude, route to
         // `--search` / `--exclude-search`.
+        // KWAL `+sS` is the search keyword (KWAL has no separate word filter).
+        (b'+', b's') if subcommand == Kwal && !rest.starts_with('@') => {
+            rewrite_subcommand_value_flag(rest, "--keyword")
+        }
         (b'+', b's') if subcommand == Combo => rewrite_subcommand_value_flag(rest, "--search"),
         (b'-', b's') if subcommand == Combo => {
             rewrite_subcommand_value_flag(rest, "--exclude-search")
@@ -173,6 +184,21 @@ pub(super) fn try_rewrite_clan_flag(
         }
 
         (b'+', b's') | (b'-', b's') => rewrite_search_word(polarity, rest),
+
+        // CHIP's `+g` enables word-class substitution; it takes no value.
+        (b'+', b'g') if subcommand == Chip && rest.is_empty() => {
+            Some(vec!["--substitution".into()])
+        }
+        (b'+', b'g') if subcommand == Chip => None,
+        // CHIP's `-hFILE` is a word-exclusion list, not the common
+        // utterance-level word filter. Require an attached filename as CLAN
+        // does, and route it to the typed CHIP list loader.
+        (b'-', b'h') if subcommand == Chip && !rest.is_empty() => {
+            rewrite_subcommand_value_flag(rest, "--exclusion-list")
+        }
+        // Do not let a bare `-h` turn into clap's successful help path.
+        (b'-', b'h') if subcommand == Chip => Some(vec!["--chip-invalid-exclusion-list".into()]),
+        (b'+', b'h') if subcommand == Chip => Some(vec!["--chip-invalid-option".into()]),
 
         // +g: command-dependent.
         //   * CHECK       → generic options (`+g1`..`+g5` map to
@@ -292,12 +318,17 @@ pub(super) fn try_rewrite_clan_flag(
         // `+n` under LINES is a no-value boolean, remove existing
         // line numbers (default: add them). Routes to `--remove`.
         (b'+', b'n') if rest.is_empty() && subcommand == Lines => Some(vec!["--remove".into()]),
+        (b'-', b'n') if subcommand == Chip && rest.len() == 1 => {
+            Some(vec!["--disable-scoring".into(), rest.to_ascii_lowercase()])
+        }
+        (b'-', b'n') if subcommand == Chip => None,
 
         // `+cF` under ORT specifies the homons-table dictionary.
         // Maps `+ceng.cut` → `--dictionary eng.cut`.
         (b'+', b'c') if !rest.is_empty() && subcommand == Ort => {
             rewrite_subcommand_value_flag(rest, "--dictionary")
         }
+        (b'+', b'c') if subcommand == Chip => rewrite_subcommand_value_flag(rest, "--child"),
 
         // +bS under KEYMAP sets a key-code to track. Routes to
         // `--keyword S` (repeatable). KEYMAP's `+b` semantic is
@@ -309,6 +340,7 @@ pub(super) fn try_rewrite_clan_flag(
         (b'+', b'b') if subcommand == Keymap && !rest.starts_with('@') => {
             rewrite_subcommand_value_flag(rest, "--keyword")
         }
+        (b'+', b'b') if subcommand == Chip => rewrite_subcommand_value_flag(rest, "--adult"),
 
         // FREQ `+bN`: frame size for the Moving-Average TTR (MATTR). CLAN's
         // `+b` is command-specific (CHIP speaker code, DIST `+b:`, editor
@@ -319,6 +351,11 @@ pub(super) fn try_rewrite_clan_flag(
 
         // +z25-125, utterance range
         (b'+', b'z') => rewrite_range(rest),
+
+        // CHIP-specific thresholds must be handled before the general
+        // utterance-length and context-window interpretations.
+        (b'+', b'q') if subcommand == Chip => rewrite_subcommand_value_flag(rest, "--window"),
+        (b'+', b'w') if subcommand == Chip => rewrite_subcommand_value_flag(rest, "--min-words"),
 
         // +x utterance-length filter (FREQ). The count form `+x C N U` ->
         // `--utterance-length` (its value parser handles the w/c/m units). The
@@ -338,6 +375,7 @@ pub(super) fn try_rewrite_clan_flag(
             Some(marker) => Some(vec!["--utterance-length-restore".into(), marker.into()]),
             None => Some(vec!["--utterance-length".into(), rest.to_string()]),
         },
+        (b'+', b'x') if subcommand == Chip => rewrite_subcommand_value_flag(rest, "--min-index"),
         // `-x@FILE`: load the exclude-from-count word list from a file
         // (`rdexclfUttLen('e', …)`, `cutt.cpp:5384`), the file analog of `-xWORD`
         // and the same idiom as `-s@F` → `--exclude-word-file`.
@@ -421,6 +459,12 @@ pub(super) fn try_rewrite_clan_flag(
         // +u: For CHECK, +u means validate UD features; for other commands, merge speakers (no-op)
         (b'+', b'u') if rest.is_empty() && subcommand == Check => Some(vec!["--check-ud".into()]),
 
+        // MLU `+u` combines `+d1` rows across all input files. Without `+d1`,
+        // MLU already aggregates file input in the service's default mode.
+        (b'+', b'u') if rest.is_empty() && subcommand == Mlu => {
+            Some(vec!["--combine-files".into()])
+        }
+
         // FLUCALC `+u` enables per-utterance output in CLAN
         // (`flucalc.cpp:778-781`, `isUttList = TRUE`). chatter has
         // only `--per-file` (file granularity), NOT per-utterance,
@@ -492,8 +536,8 @@ pub(super) fn try_rewrite_clan_flag(
         // pulling them ahead of this delegation changes nothing.
         (b'+', b'd') => try_rewrite_d_flag(subcommand, rest),
 
-        // +k, case sensitive
-        (b'+', b'k') if rest.is_empty() => Some(vec!["--case-sensitive".into()]),
+        // +k toggles the command-specific case default.
+        (b'+', b'k') if rest.is_empty() => Some(vec!["--plus-k".into()]),
 
         // +fEXT, output extension
         (b'+', b'f') if !rest.is_empty() => Some(vec!["--output-ext".into(), rest.to_string()]),

@@ -33,8 +33,8 @@ pub(super) fn clan_timestamp_now() -> String {
 /// freq +scat path/to/file.cha
 /// ```
 ///
-/// chatter is invoked as `chatter clan <command> <args...>`. The CLAN
-/// analog drops the `chatter clan` prefix and starts at the CLAN
+/// chatter-clan is invoked as `<command> <args...>`. The CLAN
+/// analog starts at the CLAN
 /// subcommand name (`<command>`). The slice from `clan_pos + 1` onward
 /// is what we want, joined by single spaces.
 ///
@@ -49,7 +49,7 @@ pub(super) fn clan_timestamp_now() -> String {
 /// Phase 1.7 of the CLAN parity plan
 /// (`scripts/clan-parity/PLAN.md`). For the typical migration use
 /// case, researchers pasting CLAN-style `+flag` arguments into
-/// `chatter clan`, no filtering kicks in.
+/// `chatter-clan`, no filtering kicks in.
 ///
 /// Pure function: takes argv + clan position; the caller threads in
 /// `std::env::args()` and the `clan` index from the dispatcher.

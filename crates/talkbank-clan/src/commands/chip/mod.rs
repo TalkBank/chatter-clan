@@ -1,251 +1,275 @@
-//! CHIP, Child/Parent Interaction Profile.
+//! CHIP, CLAN's child/adult interaction profile.
 //!
-//! Reimplements CLAN's CHIP command, which analyzes interaction patterns between
-//! a child speaker and their conversational partners. It categorizes successive
-//! utterance pairs to measure imitation, repetition, and overlap. CHIP is
-//! commonly used in child language research to quantify how much a child
-//! imitates or echoes their interlocutor.
-//!
-//! # CLAN Equivalence
-//!
-//! | CLAN command                       | Rust equivalent                                     |
-//! |------------------------------------|-----------------------------------------------------|
-//! | `chip +t*CHI file.cha`             | `chatter analyze chip file.cha -s CHI`              |
-//! | `chip file.cha`                    | `chatter analyze chip file.cha`                     |
-//!
-//! # Interaction Categories
-//!
-//! For each adjacent utterance pair (speaker A followed by speaker B):
-//! - **Exact repetition**: B's utterance words are identical to A's (order-independent)
-//! - **Overlap**: B's utterance shares >=50% of words with A's (using the smaller
-//!   unique-word set as denominator)
-//! - **No overlap**: B's utterance shares <50% of words with A's
-//!
-//! Only cross-speaker adjacency is considered; consecutive utterances by the
-//! same speaker do not produce interaction records. Adjacency state is reset
-//! at file boundaries.
-//!
-//! # Output
-//!
-//! Per directed speaker pair (e.g., MOT->CHI is distinct from CHI->MOT):
-//! - Counts of exact repetitions, overlaps, and non-overlaps
-//! - Percentages of each category relative to the pair total
-//! - Grand totals across all pairs
-//!
-//! # Differences from CLAN
-//!
-//! - Word identification uses AST-based `is_countable_word()` instead of
-//!   CLAN's string-prefix matching (`word[0] == '&'`, etc.).
-//! - Overlap comparison operates on parsed word content, not raw text.
-//! - Output supports text, JSON, and CSV formats (CLAN produces text only).
-//! - Deterministic output ordering via sorted collections.
+//! The implementation uses the typed CHAT tree for surface words and UD
+//! `%mor` items. CLAN's legacy morphology format is not represented by Chatter
+//! v0.33.0, so that part of the original implementation is an explicit
+//! divergence rather than a string-parsing fallback.
 
+mod config;
+mod interaction;
 mod output;
 #[cfg(test)]
 mod tests;
+mod word;
 
-use std::collections::HashSet;
+use std::collections::VecDeque;
 
-use indexmap::IndexMap;
-use talkbank_model::{Utterance, WriteChat};
+use interaction::{Code, Column, Outcome, Params, Role, Tallies, Utter, single_interaction};
+use talkbank_model::{DependentTier, Utterance, WriteChat};
 
-use crate::framework::{AnalysisCommand, FileContext, countable_words};
+use crate::framework::{AnalysisCommand, FileContext};
 
-pub use output::{ChipPairEntry, ChipResult};
+pub use config::{
+    ChipCaseMode, ChipConfig, ChipConfigError, ColumnScoring, MinIndex, MinWords, Scoring,
+    SpeakerCode, Substitution, UtteranceWindow, WordSource,
+};
+pub use output::{ChipFileReport, ChipFileStatus, ChipMatrix, ChipResult, MatrixRow};
+use word::{MisalignedMor, utterance_words};
 
-/// Shared-word ratio threshold for classifying consecutive utterances as
-/// overlapping. Two utterances with ratio ≥ this value are classified as
-/// `Interaction::Overlap`. The CLAN CHIP command uses 50%.
-const OVERLAP_THRESHOLD: f64 = 0.5;
-
-/// Configuration for the CHIP command.
-#[derive(Debug, Clone, Default)]
-pub struct ChipConfig {}
-
-/// Interaction category for an adjacent utterance pair (internal).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Interaction {
-    /// B's words are identical to A's.
-    ExactRepetition,
-    /// B shares ≥50% of words with A.
-    Overlap,
-    /// B shares <50% of words with A.
-    NoOverlap,
-}
-
-/// Key for a directed speaker pair (from → to).
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct SpeakerPair {
-    from: String,
-    to: String,
-}
-
-/// Accumulated interaction counts for a speaker pair (internal).
+/// State accumulated across a complete CHIP invocation.
 #[derive(Debug, Default)]
-struct PairInteractions {
-    exact_repetitions: u64,
-    overlaps: u64,
-    no_overlaps: u64,
+pub struct ChipState {
+    files: Vec<ChipFileReport>,
+    active_file: Option<ActiveFile>,
 }
 
-impl PairInteractions {
-    /// Total classified interactions accumulated for this directed pair.
-    fn total(&self) -> u64 {
-        self.exact_repetitions + self.overlaps + self.no_overlaps
+#[derive(Debug)]
+struct ActiveFile {
+    filename: String,
+    transcript: String,
+    window: VecDeque<Utter>,
+    tallies: Tallies,
+    worded_utterances: usize,
+    failure: Option<MisalignedMor>,
+}
+
+impl ActiveFile {
+    fn new(context: &FileContext<'_>) -> Self {
+        Self {
+            filename: context.path.file_name().map_or_else(
+                || context.filename.to_owned(),
+                |name| name.to_string_lossy().into(),
+            ),
+            transcript: String::new(),
+            window: VecDeque::new(),
+            tallies: Tallies::default(),
+            worded_utterances: 0,
+            failure: None,
+        }
+    }
+
+    fn append_line(&mut self, line: &str) {
+        self.transcript.push_str(line);
+        self.transcript.push('\n');
     }
 }
 
-/// Accumulated state for CHIP across all files.
-#[derive(Debug, Default)]
-pub struct ChipState {
-    /// Per-speaker-pair interaction counts.
-    by_pair: IndexMap<SpeakerPair, PairInteractions>,
-    /// Previous utterance's speaker and word set (for pair detection).
-    pub prev_speaker: Option<String>,
-    /// Previous utterance's words (lowercased, sorted for comparison).
-    pub prev_words: Vec<String>,
-    /// Echoed utterance lines for CLAN output.
-    echoed_lines: Vec<String>,
+/// CHIP scoring command.
+#[derive(Debug, Clone, Default)]
+pub struct ChipCommand {
+    config: ChipConfig,
 }
 
-/// CHIP command implementation.
-///
-/// Compares each utterance with the immediately preceding one. When speakers
-/// differ, classifies the interaction as exact repetition, overlap, or
-/// no overlap based on word-level comparison.
-#[derive(Debug, Clone, Default)]
-pub struct ChipCommand;
+impl ChipCommand {
+    /// Build CHIP with validated command-line options.
+    pub fn new(config: ChipConfig) -> Self {
+        Self { config }
+    }
+
+    fn role_for(&self, speaker: &str) -> Role {
+        if self
+            .config
+            .children()
+            .iter()
+            .any(|code| code.as_str() == speaker)
+        {
+            Role::Child
+        } else if self
+            .config
+            .adults()
+            .iter()
+            .any(|code| code.as_str() == speaker)
+        {
+            Role::Adult
+        } else {
+            Role::Other
+        }
+    }
+
+    fn score_pair(
+        &self,
+        tallies: &mut Tallies,
+        source: &Utter,
+        response: &Utter,
+        column: Column,
+        distance: usize,
+        tier: &str,
+    ) -> Option<String> {
+        let outcome = single_interaction(
+            &source.words,
+            &response.words,
+            Params {
+                subst: self.config.source.substitution(),
+                min_words: self.config.min_words,
+                min_index: self.config.min_index,
+            },
+            tallies.column_mut(column),
+        );
+        let Outcome::Scored { rep_index, codes } = outcome else {
+            return None;
+        };
+        if rep_index > self.config.min_index.get() {
+            tallies.column_mut(column).dist += distance as u64;
+        }
+
+        let mut code = codes.iter().map(ToString::to_string).collect::<String>();
+        if rep_index > self.config.min_index.get() {
+            code.push_str(&Code::Dist(distance).to_string());
+        }
+        code.push_str(&Code::Rep(rep_index).to_string());
+        Some(format!("{tier}:\t{}", code.trim_start()))
+    }
+
+    fn process_scoring(&self, file: &mut ActiveFile, current: &Utter) -> Vec<String> {
+        let mut tiers = Vec::new();
+        if current.words.is_empty() {
+            return tiers;
+        }
+
+        if self.config.scoring.self_rep == Scoring::Enabled
+            && matches!(current.role, Role::Adult | Role::Child)
+            && let Some((distance, previous)) =
+                file.window.iter().enumerate().find(|(_, previous)| {
+                    previous.role == current.role
+                        && previous.speaker == current.speaker
+                        && !previous.words.is_empty()
+                })
+        {
+            let target = match current.role {
+                Role::Adult => Some((Column::AdultSelf, "%asr")),
+                Role::Child => Some((Column::ChildSelf, "%csr")),
+                Role::Other => None,
+            };
+            if let Some((column, tier)) = target
+                && let Some(code) = self.score_pair(
+                    &mut file.tallies,
+                    previous,
+                    current,
+                    column,
+                    distance + 1,
+                    tier,
+                )
+            {
+                tiers.push(code);
+            }
+        }
+
+        let partner_role = match current.role {
+            Role::Adult if self.config.scoring.adult == Scoring::Enabled => Some(Role::Child),
+            Role::Child if self.config.scoring.child == Scoring::Enabled => Some(Role::Adult),
+            Role::Adult | Role::Child | Role::Other => None,
+        };
+        if let Some(partner_role) = partner_role
+            && let Some((distance, previous)) =
+                file.window.iter().enumerate().find(|(_, previous)| {
+                    previous.role == partner_role && !previous.words.is_empty()
+                })
+        {
+            let target = match current.role {
+                Role::Adult => Some((Column::Adult, "%adu")),
+                Role::Child => Some((Column::Child, "%chi")),
+                Role::Other => None,
+            };
+            if let Some((column, tier)) = target
+                && let Some(code) = self.score_pair(
+                    &mut file.tallies,
+                    previous,
+                    current,
+                    column,
+                    distance + 1,
+                    tier,
+                )
+            {
+                tiers.push(code);
+            }
+        }
+        tiers
+    }
+}
 
 impl AnalysisCommand for ChipCommand {
     type Config = ChipConfig;
     type State = ChipState;
     type Output = ChipResult;
 
-    /// Compare each utterance against the immediately previous utterance.
-    ///
-    /// Interactions are recorded only when speakers differ and both utterances
-    /// contain at least one countable word.
     fn process_utterance(
         &self,
         utterance: &Utterance,
-        _file_context: &FileContext<'_>,
+        context: &FileContext<'_>,
         state: &mut Self::State,
     ) {
-        let speaker = utterance.main.speaker.as_str().to_owned();
-        let words: Vec<String> = countable_words(&utterance.main.content.content)
-            .map(|w| w.cleaned_text().to_lowercase())
-            .collect();
-
-        // Echo utterance lines for CLAN output (main tier + %mor only, not %gra).
-        state.echoed_lines.push(utterance.main.to_chat_string());
-        if let Some(mor_tier) = utterance.mor_tier() {
-            state.echoed_lines.push(mor_tier.to_chat_string());
+        let file = state
+            .active_file
+            .get_or_insert_with(|| ActiveFile::new(context));
+        if file.failure.is_some() {
+            return;
         }
 
-        // Compare with previous utterance if speakers differ
-        if let Some(ref prev_speaker) = state.prev_speaker
-            && *prev_speaker != speaker
-            && !state.prev_words.is_empty()
-            && !words.is_empty()
-        {
-            let interaction = classify_interaction(&state.prev_words, &words);
-            let pair = SpeakerPair {
-                from: prev_speaker.clone(),
-                to: speaker.clone(),
-            };
-            let counts = state.by_pair.entry(pair).or_default();
-            match interaction {
-                Interaction::ExactRepetition => counts.exact_repetitions += 1,
-                Interaction::Overlap => counts.overlaps += 1,
-                Interaction::NoOverlap => counts.no_overlaps += 1,
+        let words = match utterance_words(utterance, &self.config) {
+            Ok(words) => words,
+            Err(error) => {
+                file.failure = Some(error);
+                return;
+            }
+        };
+
+        if !words.is_empty() {
+            file.worded_utterances += 1;
+            match self.role_for(utterance.main.speaker.as_str()) {
+                Role::Adult => file.tallies.adult.utters += 1,
+                Role::Child => file.tallies.child.utters += 1,
+                Role::Other => {}
             }
         }
 
-        state.prev_speaker = Some(speaker);
-        state.prev_words = words;
-    }
+        let current = Utter {
+            speaker: utterance.main.speaker.as_str().to_owned(),
+            role: self.role_for(utterance.main.speaker.as_str()),
+            words,
+        };
+        let generated_tiers = self.process_scoring(file, &current);
 
-    /// Reset adjacency state so interactions never cross file boundaries.
-    fn end_file(&self, _file_context: &FileContext<'_>, state: &mut Self::State) {
-        // Reset cross-utterance state at file boundaries
-        state.prev_speaker = None;
-        state.prev_words.clear();
-    }
-
-    /// Materialize totals and preserve encounter order for pair rows.
-    fn finalize(&self, state: Self::State) -> ChipResult {
-        let echoed_lines = state.echoed_lines;
-        if state.by_pair.is_empty() {
-            return ChipResult {
-                pairs: Vec::new(),
-                total_interactions: 0,
-                total_exact: 0,
-                total_overlaps: 0,
-                echoed_lines,
-            };
+        file.append_line(&utterance.main.to_chat_string());
+        for dependent in &utterance.dependent_tiers {
+            if matches!(&dependent.tier, DependentTier::Mor(_)) {
+                file.append_line(&dependent.tier.to_chat_string());
+            }
+        }
+        for tier in generated_tiers {
+            file.append_line(&tier);
         }
 
-        let total_interactions: u64 = state.by_pair.values().map(PairInteractions::total).sum();
-        let total_exact: u64 = state.by_pair.values().map(|p| p.exact_repetitions).sum();
-        let total_overlaps: u64 = state.by_pair.values().map(|p| p.overlaps).sum();
-
-        let pairs: Vec<ChipPairEntry> = state
-            .by_pair
-            .into_iter()
-            .map(|(pair, counts)| ChipPairEntry {
-                from: pair.from,
-                to: pair.to,
-                exact_repetitions: counts.exact_repetitions,
-                overlaps: counts.overlaps,
-                no_overlaps: counts.no_overlaps,
-            })
-            .collect();
-
-        ChipResult {
-            pairs,
-            total_interactions,
-            total_exact,
-            total_overlaps,
-            echoed_lines,
-        }
-    }
-}
-
-/// Classify the interaction between two utterances based on word overlap.
-///
-/// - Exact repetition: sorted word lists are identical
-/// - Overlap: ≥50% of the shorter utterance's unique words appear in the longer
-/// - No overlap: <50% overlap
-///
-/// # Precondition
-/// Both word lists must be non-empty.
-fn classify_interaction(prev_words: &[String], curr_words: &[String]) -> Interaction {
-    // Compare sorted word lists for exact repetition
-    let mut prev_sorted = prev_words.to_vec();
-    let mut curr_sorted = curr_words.to_vec();
-    prev_sorted.sort();
-    curr_sorted.sort();
-
-    if prev_sorted == curr_sorted {
-        return Interaction::ExactRepetition;
+        file.window.push_front(current);
+        file.window.truncate(self.config.window.capacity());
     }
 
-    // Compute word overlap ratio
-    let prev_set: HashSet<&str> = prev_words.iter().map(|s| s.as_str()).collect();
-    let curr_set: HashSet<&str> = curr_words.iter().map(|s| s.as_str()).collect();
-    let intersection_count = prev_set.intersection(&curr_set).count();
+    fn end_file(&self, _context: &FileContext<'_>, state: &mut Self::State) {
+        let Some(file) = state.active_file.take() else {
+            return;
+        };
+        let status = match file.failure {
+            Some(error) => ChipFileStatus::Rejected(error.to_string()),
+            None if file.worded_utterances == 0 => ChipFileStatus::NoScorableUtterances,
+            None => ChipFileStatus::Scored(ChipMatrix::build(&file.tallies, &self.config)),
+        };
+        state.files.push(ChipFileReport {
+            filename: file.filename,
+            transcript: file.transcript,
+            status,
+        });
+    }
 
-    // Use the smaller set as denominator for overlap ratio
-    let min_size = prev_set.len().min(curr_set.len());
-    let ratio = if min_size > 0 {
-        intersection_count as f64 / min_size as f64
-    } else {
-        0.0
-    };
-
-    if ratio >= OVERLAP_THRESHOLD {
-        Interaction::Overlap
-    } else {
-        Interaction::NoOverlap
+    fn finalize(&self, state: Self::State) -> Self::Output {
+        ChipResult { files: state.files }
     }
 }

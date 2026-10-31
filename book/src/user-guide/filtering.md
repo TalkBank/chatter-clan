@@ -46,11 +46,11 @@ flowchart TD
 
 ```bash
 # Child speaker only, within a gem
-chatter clan freq --speaker CHI --gem "story" file.cha
+chatter-clan freq --speaker CHI --gem "story" file.cha
 
 # All speakers except investigator, utterances 10-50
-chatter clan mlu --exclude-speaker INV --range 10-50 file.cha
+chatter-clan mlu --exclude-speaker INV --range 10-50 file.cha
 
 # Only utterances containing "the" (KWAL's search is +s, which maps to --keyword)
-chatter clan kwal --keyword "the" file.cha
+chatter-clan kwal --keyword "the" file.cha
 ```

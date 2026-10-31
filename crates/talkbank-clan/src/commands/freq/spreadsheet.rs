@@ -5,21 +5,16 @@
 //! CLAN's FREQ spreadsheet (`freq.cpp` two-pass `stat.frq.*` path) to semantic
 //! cell equivalence.
 //!
-//! This first slice covers the `@ID`-derived columns
-//! ([`id_header_to_cells`](id_columns::id_header_to_cells)); the full
-//! `+d2`/`+d3` workbook layout builds on it.
+//! The shared `@ID`-derived column lowering lives in
+//! [`crate::framework::id_columns`].
 
 use std::collections::BTreeMap;
 
 use super::{FreqFileSpeakerRow, FreqResult};
 use crate::framework::spreadsheet::{Cell, ColumnWidth, Row, SheetName, Workbook, Worksheet};
 
-// The `@ID`-column lowering and the row builders are split into sibling
-// submodules to keep this file browseable; their items are re-exported so the
-// `impl FreqResult` workbook builders (and the unit tests) reach them by name.
-mod id_columns;
+// The row builders are split into a submodule to keep this file browseable.
 mod rows;
-
 use rows::{PERCENT_SPEAKER_HEADER, data_row, header_row, percent_data_row, word_columns};
 
 /// Which FREQ spreadsheet to emit, mapped from CLAN's `+d2` / `+d3`.
@@ -301,8 +296,8 @@ impl FreqResult {
 
 #[cfg(test)]
 mod tests {
-    use super::id_columns::{ID_COLUMN_COUNT, id_header_to_cells, ses_field_cells};
     use super::*;
+    use crate::framework::id_columns::{ID_COLUMN_COUNT, id_header_to_cells, ses_field_cells};
     use crate::framework::spreadsheet::{ColumnWidth, Row, SheetName, Workbook, Worksheet};
     use std::collections::BTreeMap;
     use talkbank_model::{IDHeader, SesValue, Sex};
@@ -318,7 +313,7 @@ mod tests {
     /// The Manchester Anne `@ID`: rich fields, SES "MC" -> Race=".", SES="MC".
     #[test]
     fn anne_id_lowers_to_oracle_cells() {
-        let id = IDHeader::new("eng", "CHI", "Target_Child")
+        let id = crate::test_support::id_header("eng", "CHI", "Target_Child")
             .with_corpus("Manchester")
             .with_age("1;10.07")
             .with_sex(Sex::Female)
@@ -379,14 +374,14 @@ mod tests {
     #[test]
     fn numeric_corpus_is_number_cell() {
         // An all-digit @ID field (e.g. a year-named corpus) -> Number cell.
-        let id = IDHeader::new("eng", "CHI", "Target_Child").with_corpus("2020");
+        let id = crate::test_support::id_header("eng", "CHI", "Target_Child").with_corpus("2020");
         let xml = render_id_row(&id);
         assert!(xml.contains(r#"<Data ss:Type="Number">2020</Data>"#));
     }
 
     /// The Anne / Aran rows mirroring the verified CLAN `+d2` oracle.
     fn oracle_result() -> FreqResult {
-        let anne_id = IDHeader::new("eng", "CHI", "Target_Child")
+        let anne_id = crate::test_support::id_header("eng", "CHI", "Target_Child")
             .with_corpus("Manchester")
             .with_age("1;10.07")
             .with_sex(Sex::Female)
@@ -408,7 +403,7 @@ mod tests {
             mattr: None,
         };
 
-        let aran_id = IDHeader::new("eng", "CHI", "Target_Child")
+        let aran_id = crate::test_support::id_header("eng", "CHI", "Target_Child")
             .with_corpus("Manchester")
             .with_age("1;11.12")
             .with_sex(Sex::Male)
@@ -569,7 +564,11 @@ mod tests {
             FreqFileSpeakerRow {
                 filename: "f".to_owned(),
                 speaker: speaker.to_owned(),
-                id: Some(IDHeader::new("eng", speaker, "Target_Child")),
+                id: Some(crate::test_support::id_header(
+                    "eng",
+                    speaker,
+                    "Target_Child",
+                )),
                 word_counts: words,
                 utterance_count: 2,
                 total_types: 2,

@@ -1,7 +1,6 @@
 use rand::SeedableRng;
 use rand::rngs::StdRng;
-use talkbank_model::Span;
-use talkbank_model::{MainTier, Terminator, Utterance, UtteranceContent, Word};
+use talkbank_model::{Utterance, UtteranceContent};
 
 use super::stats::{average_ttr, d_from_ttr, find_min_d, ttr_equation};
 use super::*;
@@ -91,9 +90,9 @@ fn vocd_insufficient_tokens_warning() {
 
     let content: Vec<UtteranceContent> = ["hello", "world", "test"]
         .iter()
-        .map(|w| UtteranceContent::Word(Box::new(Word::simple(*w))))
+        .map(|w| UtteranceContent::Word(Box::new(crate::test_support::word(*w))))
         .collect();
-    let main = MainTier::new("CHI", content, Terminator::Period { span: Span::DUMMY });
+    let main = crate::test_support::main_tier("CHI", content);
     let utt = Utterance::new(main);
 
     cmd.process_utterance(&utt, &file_ctx, &mut state);
@@ -130,9 +129,9 @@ fn vocd_with_enough_tokens() {
         for chunk in word_pool.chunks(5) {
             let content: Vec<UtteranceContent> = chunk
                 .iter()
-                .map(|w| UtteranceContent::Word(Box::new(Word::simple(*w))))
+                .map(|w| UtteranceContent::Word(Box::new(crate::test_support::word(*w))))
                 .collect();
-            let main = MainTier::new("CHI", content, Terminator::Period { span: Span::DUMMY });
+            let main = crate::test_support::main_tier("CHI", content);
             let utt = Utterance::new(main);
             cmd.process_utterance(&utt, &file_ctx, &mut state);
         }

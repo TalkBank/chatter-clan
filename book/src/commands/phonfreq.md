@@ -12,8 +12,8 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409227
 ## Usage
 
 ```bash
-chatter clan phonfreq file.cha
-chatter clan phonfreq file.cha --speaker CHI
+chatter-clan phonfreq file.cha
+chatter-clan phonfreq file.cha --speaker CHI
 ```
 
 ## Options (chatter-native)

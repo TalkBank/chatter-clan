@@ -14,9 +14,9 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc87376473)
 ## Usage
 
 ```bash
-chatter clan eval file.cha
-chatter clan eval --speaker CHI file.cha
-chatter clan eval --format json file.cha
+chatter-clan eval file.cha
+chatter-clan eval --speaker CHI file.cha
+chatter-clan eval --format json file.cha
 ```
 
 ## Options (chatter-native)
@@ -133,4 +133,4 @@ Verified against CLAN C binary output.
 
 ## EVAL-D variant
 
-`chatter clan eval-d` is identical to EVAL but uses DementiaBank protocol norms instead of AphasiaBank norms for normative comparison. See [EVAL-D](eval-d.md) for details.
+`chatter-clan eval-d` is identical to EVAL but uses DementiaBank protocol norms instead of AphasiaBank norms for normative comparison. See [EVAL-D](eval-d.md) for details.

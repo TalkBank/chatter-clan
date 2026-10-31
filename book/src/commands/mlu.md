@@ -1,7 +1,7 @@
 # MLU -- Mean Length of Utterance
 
 **Status:** Current
-**Last updated:** 2026-06-05 10:23 EDT
+**Last updated:** 2026-10-31
 
 ## Purpose
 
@@ -12,10 +12,12 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409094
 ## Usage
 
 ```bash
-chatter clan mlu file.cha
-chatter clan mlu --speaker CHI file.cha
-chatter clan mlu --words file.cha
-chatter clan mlu --format json corpus/
+chatter-clan mlu file.cha
+chatter-clan mlu --speaker CHI file.cha
+chatter-clan mlu --words file.cha
+chatter-clan mlu --id-rows file.cha
+chatter-clan mlu --id-rows --combine-files corpus/
+chatter-clan mlu --format json corpus/
 ```
 
 ## Options (chatter-native)
@@ -32,15 +34,19 @@ chatter clan mlu --format json corpus/
 | `--include-xxx` | `+sxxx` | Re-admit `xxx` (unintelligible) utterances to the count |
 | `--include-yyy` | `+syyy` | Re-admit `yyy` (phonological) utterances to the count |
 | `--combine-speakers` | `+o3` (or bare `+t*`) | Pool selected speakers into one `*COMBINED*` result |
+| `--spreadsheet` | `+d` | Write an Excel-compatible SpreadsheetML workbook |
+| `--id-rows` | `+d1` | Emit tab-separated rows with the ten `@ID` fields and MLU statistics |
+| `--combine-files` | `+u` with `+d1` | Aggregate `+d1` rows across input files |
 | `--format <FMT>` | -- | Output format: clan (default), text, json, csv |
 
 ## CLAN Equivalence
 
 | CLAN command | Rust equivalent |
 |---|---|
-| `mlu file.cha` | `chatter clan mlu file.cha` |
-| `mlu +t*CHI file.cha` | `chatter clan mlu file.cha --speaker CHI` |
-| `mlu -bw file.cha` | `chatter clan mlu file.cha --words` |
+| `mlu file.cha` | `chatter-clan mlu file.cha` |
+| `mlu +t*CHI file.cha` | `chatter-clan mlu file.cha --speaker CHI` |
+| `mlu -bw file.cha` | `chatter-clan mlu file.cha --words` |
+| `mlu +d file.cha` | `chatter-clan mlu file.cha --spreadsheet` |
 
 ## CLAN `+`-flag coverage audit
 
@@ -67,8 +73,9 @@ Missing.)
 | `-bc` | Count characters, not morphemes | (reject) | Done | The unix CLAN binary (our parity target) ERRORS on `-bc`: the character branch is `#ifndef UNX` (mlu.cpp:678-680), so `getflag` falls through to "Please specify w - words after -b option." (mlu.cpp:686). chatter is fail-closed too (clap rejects; documented message divergence, like the `+w`-on-aggregate reject). Counting characters is a legitimate measure but would live on a chatter-only flag, never the CLAN `-b` slot. Pinned by `mlu_bc_fails_closed_no_silent_count`. |
 | `+cS` | Clause-marker delimiter `S` |, | Missing | Used to break utterances into clauses for MLU calculation. |
 | `+c@F` | Clause-markers listed in file `F` |, | Missing | File-list workflow. |
+| `+d` | SpreadsheetML workbook | `--spreadsheet` | Done | Writes `<input>.mlu.xls` beside the first input file. Workbook rows share the CLAN `excelOutputID` lowering; absent `@ID` headers use `.` fields with the speaker code in `Code`. Live-probed against CLAN (2026-10-31). |
 | `+sxxx` | Re-include `xxx` utterances in the count | `--include-xxx` | Done | Landed 2026-06-05. CLAN `ml_isXXXFound` (mlu.cpp:766) stops dropping `xxx`-containing utterances (`mlu_excludeUtter` blanks the token instead of returning TRUE, mllib.cpp:337) and switches to the two-line `+sxxx` header (mlu.cpp:250-251); the `xxx` string still contributes no morpheme. Manual §7.21 pt5. Byte-parity golden `mlu_sxxx_include` (manchester-anne.cha CHI: utt 3 / morph 4). Modeled as `MluConfig.re_included_untranscribed`. |
-| `+syyy` | Re-include `yyy` utterances in the count | `--include-yyy` | Done (binary-matched; **documented divergence**) | The CLAN binary accepts `+syyy` (sets `ml_isYYYFound`, mlu.cpp:776) and re-includes the `yyy` utterances, but (a) the manual §7.21 pt2 says "yyy and www are always excluded and cannot be included", and (b) CLAN has NO yyy-only header branch (mlu.cpp:246-253), so `+syyy` alone keeps the DEFAULT header while changing the count. chatter reproduces the binary (the `chatter clan` parity oracle), pinned by the header-variant unit test; the manual conflict is recorded under "Documented CLAN-bug divergences" below for PI adjudication. |
+| `+syyy` | Re-include `yyy` utterances in the count | `--include-yyy` | Done (binary-matched; **documented divergence**) | The CLAN binary accepts `+syyy` (sets `ml_isYYYFound`, mlu.cpp:776) and re-includes the `yyy` utterances, but (a) the manual §7.21 pt2 says "yyy and www are always excluded and cannot be included", and (b) CLAN has NO yyy-only header branch (mlu.cpp:246-253), so `+syyy` alone keeps the DEFAULT header while changing the count. chatter reproduces the binary (the `chatter-clan` parity oracle), pinned by the header-variant unit test; the manual conflict is recorded under "Documented CLAN-bug divergences" below for PI adjudication. |
 | `+sxxx`/`+syyy` default (no flag) | Exclude utterances containing `xxx`/`yyy`/`www` | (default) | Done | Landed 2026-06-05 (base-command bug fix). Manual §7.21 pt2: xxx/yyy/www and the utterances containing them are excluded by default; `mlu_excludeUtter` (mllib.cpp:303-348) returns TRUE on the MAIN tier (mlu.cpp:509). chatter previously counted utterances that mixed `xxx` with real words (e.g. `it xxx xxx`). Byte-parity golden `mlu_xxx_exclude`. |
 | `-sxxx`/`-syyy`/`+swww`/`-swww` | (reject) | (reject) | Done | CLAN errors: "Excluding xxx is not allowed" (mlu.cpp:768), "Including/Excluding www is not allowed" (mlu.cpp:784); www is never includable. chatter fails closed (clap rejects a self-documenting non-existent flag, because `--speaker` owns `-s` and a plain pass-through would be misread as `--speaker`). Pinned by `mlu_s_untranscribed_guards_fail_closed`. |
 | `[+ mlue]` postcode | Exclude this utterance from MLU | (default) | Done | Landed 2026-06-05 (base-command bug fix). `isMLUEpostcode` defaults TRUE (mlu.cpp:108); `isPostCodeOnUtt(line, "[+ mlue]")` -> `isSkip` (mlu.cpp:503). chatter checks `MainTier::content.postcodes` for the `mlue` payload. Byte-parity golden `mlu_mlue_postcode_exclude` (trimmed NINJAL-Okubo fixture). The `+s"[+ mlue]"` force-include override (manual §7.21 pt5) is not yet surfaced; the default always excludes. |
@@ -84,53 +91,43 @@ Missing.)
 |---|---|---|---|---|
 | `+t*X` / `-t*X` | Include/exclude speaker | `--speaker` / `--exclude-speaker` | Done | `+tX` (no `*`) also accepted post-2026-05-21 fix. Bare `+t*` (star, NOTHING after) is a hidden alias for `+o3` (mlu.cpp:735, `*f == '*' && *(f+1) == EOS` sets `mlu_isCombineSpeakers`) -> `--combine-speakers`; pinned by `mlu_bare_star_t_combines_like_o3`. |
 | `+t%X` / `-t%X` | Include/exclude dependent tier `%X` | `--tier` / `--exclude-tier` (rewriter target) | Rewriter only | No clap field on MLU; only `+t%mor` is handled implicitly by the default-mor logic. Other `%X` errors at parse time. |
-| `+t@ID="..."` | Filter by @ID pattern | `--id-filter` | Done | Banner mapping deferred (PLAN §1.6). |
+| `+t@ID="..."` | Filter by @ID pattern | `--id-filter` | Done | Live-probed against CLAN MLU on `tiers/mor-gra.cha` with `+t@ID=*|*|CHI|*`: the filter selects CHI, while CLAN's banner still says only `ONLY dependent tiers matching: %MOR;`. The existing dependent-only scope is therefore faithful; no ID clause belongs in this banner. |
 | `+t#ROLE` | Filter by role | `--role` | Done | Fixed 2026-05-22; see [FREQ](./freq.md) for the shared implementation. |
 | `+s"word"` / `-s"word"` | Include/exclude word in counting | `--include-word` / `--exclude-word` | Partial | MLU's `+s` has command-specific scope. The untranscribed forms (`+sxxx`/`+syyy`/`-sxxx`/`+swww`/...) are now handled (rows above). Still Partial: the postcode force-include forms `+s"[+ mlue]"`/`+s"[+ trn]"` (manual §7.21 pt5) and the `[+ mlue]`-bracket / retrace-pattern (`+s+"</>"`) search forms; chatter's general word filter is the simple form only. |
 | `+s@F` / `-s@F` | Search / exclude words from file | `--include-word-file` / `--exclude-word-file` | Done | Landed 2026-05-22. File format: one pattern per line; blank lines, `# `-comments, and `;%* `-annotation lines skipped. Repeatable. |
 | `+gX` | (in MLU: utterance-elision, see above) | `--gem` (banner default) | Partial | `+g` collides between MLU's elision semantic and the general gem filter. CLAN's MLU `+g` is the *elision* meaning per `getflag`; `--gem` is the general filter (semantics differ). Confusing in CLAN itself. |
 | `+zN-M` | Utterance range | `--range` | Done | |
 | `+rN` | Various retrace / clitic / prosodic-symbol / replacement controls | `--include-retracings` (`+r6`); `+r1`/`+r2`/`+r3`/`+r4`/`+r5`/`+r7` no-op | Done | `+r6` (include retracings) is the only `+r` with a real MLU effect (`--include-retracings`). `+r1`/`+r2`/`+r3`/`+r4`/`+r5`/`+r7` are FAITHFUL NO-OPS: they tune the word FORM, but MLU counts morphemes (from `%mor`) or words (`-bw`) and never displays a form, so they change nothing (probe-confirmed 2026-06-05: morpheme total 6 and word total 189 identical with/without on mor-gra.cha and 000829.cha, both modes). MLU enables `R_OPTION` (`option_flags[MLU]`, cutt.cpp:8674), so CLAN accepts them; effect is `+s`-search only, like `+k`. Rewriter consumes them (`vec![]`); pinned by `mlu_word_form_flags_are_noops_*` and `mlu_o3_and_word_form_noop_flags_rewrite`. `+r8`/`+r50` carry over from FREQ as MOR/cross-tier deferred. |
-| `+u` | Combine across files | (default) | Done | chatter combines by default. Inverse default vs CLAN. |
+| `+u` | Combine across files | `--combine-files` (`+d1` rows) | Done | MLU `+d1` is per-file by default; `+u` aggregates those rows. The normal summary already aggregates files in chatter. |
 | `+re` | Recurse subdirectories | (default for directory args) | Done | |
 | `+pS` | Add `S` to word delimiters | -- (no-op) | Done | FAITHFUL NO-OP. MLU enables `P_OPTION` (`option_flags[MLU]`, cutt.cpp:8674) so CLAN accepts `+pS`, but the extra word delimiters never reach MLU's morpheme/word count (probe-confirmed 2026-06-05: morphemes 196 and words 189 unchanged with `+p_` on 000829.cha, where `choo_choo` stays one word and the `%mor` tier already has `choochoo`). Unlike FREQ, MLU does not re-tokenize on `+p`. Rewriter consumes it (`vec![]`); pinned by the `mlu_word_form_flags_are_noops_*` tests. |
 | `+k` | Case-sensitive matching | `--case-sensitive` (via `CommonAnalysisArgs`) | Done (no-op per CLAN) | MLU does no word-keying; `+k` is silently accepted per CLAN's `cutt.cpp::mainusage` no-op semantic. Covered by `CommonAnalysisArgs.case_sensitive` flatten on `ClanCommands::Mlu`. |
-| `+wN` / `-wN` | Context window (KWAL/COMBO keyword-context) | -- | Rewriter only | Inapplicable to MLU (per-speaker morpheme means, no per-match context to surround). The rewriter maps `+wN`/`-wN` to `--context-after`/`--context-before`, but MLU has no such clap field, so it errors at parse time, the correct outcome for an inapplicable flag (talkbank-clan/CLAUDE.md). CLAN's binary instead empties the output (a context-machinery artifact). |
+| `+wN` / `-wN` | Context window (KWAL/COMBO keyword-context) | -- | Rewriter only | Inapplicable to MLU (per-speaker morpheme means, no per-match context to surround). The rewriter maps `+wN`/`-wN` to `--context-after`/`--context-before`, but MLU has no such clap field, so it errors at parse time, the correct outcome for an inapplicable flag (talkbank-clan/AGENTS.md). CLAN's binary instead empties the output (a context-machinery artifact). |
 | `+f` / `+fEXT` | Output to file | `--output-ext` (rewriter target) | Rewriter only | Phase 1.1 sidecar work. |
 
 ### MLU `+d` display modes
 
-See the "Display Modes (`+dN` / `--display-mode N`), DRAFT" section
-below for the per-N table. All `+d` / `+d1` invocations are
-**Missing** as of 2026-05-26: MLU has no local `case 'd'`;
-consumption is via the shared `maingetflag` path at
-`OSX-CLAN/src/clan/cutt.cpp:9382` with non-empty per-program body
-at `cutt.cpp:9485` (CLAN_SRV-only rejection of `onlydata == 1 ||
-3`; otherwise pure `onlydata`-level effect). chatter has no
-`--display-mode` consumer for MLU. The per-MLU rewriter arm in
-`clan_args.rs` passes the token through so clap reports the
-literal `+d`/`+dN` argument rather than the misleading
-`--display-mode` rewrite.
+Both MLU display modes are implemented: bare `+d` writes SpreadsheetML, while
+`+d1` writes tab-separated rows.
 
 ### Audit summary
 
 | Bucket | Count |
 |---|---|
-| Done (byte-parity or in scope) | 19 |
+| Done (byte-parity or in scope) | 21 |
 | Partial (chatter abstraction differs) | 4 |
 | Rewriter only (would error at parse time) | 2 |
-| Missing (no rewriter, no clap field) | 4 (`+cS`, `+c@F`, `+d`, `+d1`) |
+| Missing (no rewriter, no clap field) | 2 (`+cS`, `+c@F`) |
 
 The remaining **Missing** rows are the clause-marker family (`+cS` / `+c@F`,
-breaks utterances into clauses and relabels the output) and the Excel/@ID
-display modes (`+d` / `+d1`). The **Documented CLAN-bug divergences** below
-record the `+syyy` manual conflict.
+which breaks utterances into clauses and relabels the output). The
+**Documented CLAN-bug divergences** below record the `+syyy` manual conflict.
 
 ### Documented CLAN-bug divergences
 
 | Flag | Divergence | Adjudication |
 |---|---|---|
-| `+syyy` | The CLAN binary re-includes `yyy`-containing utterances (`ml_isYYYFound`, mlu.cpp:776) AND prints the DEFAULT exclusion header (no yyy-only branch, mlu.cpp:246-253). The manual §7.21 pt2 says yyy "cannot be included." chatter reproduces the binary exactly (the `chatter clan` parity oracle), so `+syyy` matches the binary including the header quirk. | The manual-vs-binary conflict is a genuine adjudication item for the PI / CLAN maintainer: should `+syyy` be an error (per the manual) or an include (per the binary)? chatter follows the binary until that is resolved, rather than diverging on a solo call. |
+| `+syyy` | The CLAN binary re-includes `yyy`-containing utterances (`ml_isYYYFound`, mlu.cpp:776) AND prints the DEFAULT exclusion header (no yyy-only branch, mlu.cpp:246-253). The manual §7.21 pt2 says yyy "cannot be included." chatter reproduces the binary exactly (the `chatter-clan` parity oracle), so `+syyy` matches the binary including the header quirk. | The manual-vs-binary conflict is a genuine adjudication item for the PI / CLAN maintainer: should `+syyy` be an error (per the manual) or an include (per the binary)? chatter follows the binary until that is resolved, rather than diverging on a solo call. |
 
 The `+g` overload is the most subtle issue: MLU's command-specific
 `+g` means "exclude an utterance if it consists solely of the given
@@ -142,24 +139,21 @@ semantics, a CLAN user pasting `mlu +gum file.cha` (skip
 no-op for files with no `@G um` gem). Tracked as a Phase 1.7
 follow-up.
 
-## Display Modes (`+dN` / `--display-mode N`), DRAFT, awaiting PI review
+## Display Modes (`+dN`)
 
-> **Status: drafted from CLAN manual; not yet implemented.** The
-> rewriter at `crates/talkbank-clan/src/clan_args.rs:101` translates
-> `+dN` → `--display-mode N`, but no `clap` field consumes that token
-> today. Drafted from CLAN manual §7.21.2 (`Unique Options`, MLU) for
-> PI review.
+Both `+d` and `+d1` are implemented. Bare `+d` writes SpreadsheetML; it
+is not emulated as CSV.
 
 MLU's `+d` table is small, two N-values, both Excel-friendly output
 formats. Quoted from CLAN manual §7.21.2:
 
 | N | CLAN behavior (verbatim from manual) |
 |---|---|
-| `+d` (no number) | "You can use this switch, together with the ID specification to output data for Excel." Example: `mlu +d +tCHI sample.cha` produces a one-line @ID-keyed record: ``en\|sample\|CHI\|1;10.4\|female\|\|\|Target_Child\|\| 5  7 1.400 0.490`` (fields: @ID, utterance count, morpheme count, MLU, MLU std dev). Requires `@ID` headers per participant. |
-| `+d1` | "This level of the `+d` switch outputs data in another systematic format, with data for each speaker on a single line. However, this form is less adapted to input to a statistical program than the output for the basic `+d` switch. Also, this switch works with the `+u` switch, whereas the basic `+d` switch does not." Example: ``*CHI:  5  7 1.400 0.490``. |
+| `+d` (no number) | "You can use this switch, together with the ID specification to output data for Excel." CLAN writes a `<basename>.mlu.xls` SpreadsheetML file. Implemented by `--spreadsheet`. |
+| `+d1` | "This level of the `+d` switch outputs data in another systematic format, with data for each speaker on a single line. However, this form is less adapted to input to a statistical program than the output for the basic `+d` switch. Also, this switch works with the `+u` switch, whereas the basic `+d` switch does not." Implemented by `--id-rows`; the first column retains the input path, and `--combine-files` reproduces `+u`. |
 
-**Binary probe (2026-06-05): the manual is OUTDATED; the binary is the parity
-oracle.** Probing `OSX-CLAN/src/unix/bin/mlu` on `mor-gra.cha` shows the actual
+**Binary probe (2026-10-31): the manual is OUTDATED; the binary is the parity
+oracle.** Probing the current CLAN on `mor-gra.cha` shows the actual
 behavior differs from the manual's examples:
 
 - `+d` (no number) writes a SpreadsheetML file `<basename>.mlu.xls` (stdout only
@@ -167,31 +161,23 @@ behavior differs from the manual's examples:
   the same family as FREQ `+d2`/`+d3` (semantic-equivalence standard, not byte,
   per the talkbank-clan crate guide), and forces `@ID:` header selection (the
   banner adds "and ONLY header tiers matching: @ID:").
+- The workbook uses a `File` column with each input basename, the expanded
+  `@ID` columns, utterance and morpheme counts, MLU, and standard deviation.
+  `-bw` changes the count columns to `#words` and `words/utterances`. Multiple
+  input files contribute rows to one workbook named from the first input.
+  `+o3` emits a pooled `*COMBINED*` row. When a speaker has no `@ID`, CLAN
+  fills the `Code` cell with that speaker and emits `.` for the other ID cells
+  (`mlu.cpp:291-296`); chatter matches this fallback.
 - `+d1` prints TAB-separated, `@ID`-FIELD-EXPANDED lines to stdout, one per
   speaker, NOT the `*CHI: 5 7 ...` form the manual shows. On `mor-gra.cha`:
   ``pipeout<TAB>eng<TAB>corpus<TAB>CHI<TAB>3;00.<TAB>.<TAB>.<TAB>.<TAB>Child<TAB>.<TAB>.<TAB>    1<TAB>    6<TAB>  6.000<TAB>NA``
-  (filename, then the ten `@ID` fields with empties rendered `.`, then padded
-  utterances / morphemes / MLU / SD). The filename is `pipeout` for stdin input.
+  (input path, then the ten `@ID` fields with empties rendered `.`, then padded
+  utterances / morphemes / MLU / SD). CLAN echoes the supplied path; its stdin
+  name is `pipeout`.
 
-Implementing these is the remaining MLU work (the only non-deferred Missing
-rows). Both require `@ID` parsing + per-speaker `@ID`-field expansion and the
-source filename in `FileContext`; `+d` additionally needs the `.mlu.xls`
-SpreadsheetML writer (reuse the FREQ `+d2`/`+d3` spreadsheet path). Localize the
-manual-vs-binary mismatch as "manual outdated" and reproduce the binary.
-
-### Open questions for PI review
-
-1. `+d` (no number) maps cleanly to `--format csv` in chatter. Should
-   `--display-mode 0` (or absent N) imply `--format csv`, or remain a
-   separate axis?
-2. `+d1` is "less adapted to statistical input" yet combinable with
-   `+u`. That combinability is the differentiating feature; should
-   chatter expose it as a `--display-mode merged-by-speaker` enum
-   variant?
-3. The `+d` output requires `@ID` headers per participant. Should
-   `--display-mode` error early if `@ID` rows are missing for any
-   matched speaker, or fall back to the speaker-code-only form
-   silently?
+The `+d1` implementation uses parsed `@ID` fields, emits rows per file by
+default, and pools them across files with `+u`. For `+o3`, it emits zero-valued
+individual speaker rows followed by the pooled row.
 
 ## Algorithm
 

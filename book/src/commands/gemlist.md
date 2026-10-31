@@ -12,8 +12,8 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409206
 ## Usage
 
 ```bash
-chatter clan gemlist file.cha
-chatter clan gemlist file.cha --speaker CHI
+chatter-clan gemlist file.cha
+chatter-clan gemlist file.cha --speaker CHI
 ```
 
 ## Options

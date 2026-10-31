@@ -10,7 +10,7 @@ Converts ELAN annotation files (`.eaf`) into CHAT format. ELAN uses a time-align
 ## Usage
 
 ```bash
-chatter clan elan2chat input.eaf
+chatter-clan elan2chat input.eaf
 ```
 
 ## Options

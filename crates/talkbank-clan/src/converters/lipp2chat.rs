@@ -24,13 +24,12 @@
 //! - Each word/phonetic pair becomes its own utterance; CLAN's LIPP2CHAT
 //!   may group entries differently.
 
-use talkbank_model::Span;
 use talkbank_model::{
-    ChatFile, Header, IDHeader, LanguageCode, LanguageCodes, Line, MainTier, NonEmptyString,
-    ParticipantEntries, ParticipantEntry, ParticipantRole, SpeakerCode, Terminator, Utterance,
-    UtteranceContent, Word,
+    ChatFile, DependentTier, Header, Line, ParticipantRole, PhoTier, PhoTierType, SpeakerCode,
+    Utterance,
 };
 
+use super::build;
 use crate::framework::TransformError;
 
 /// A parsed LIPP entry.
@@ -89,49 +88,37 @@ pub fn lipp_to_chat_with_options(
 ) -> Result<ChatFile, TransformError> {
     let entries = parse_lipp(content);
 
-    let lang = LanguageCode::new(language);
+    let lang = build::language(language)?;
     let spk = SpeakerCode::new(speaker);
     let role = ParticipantRole::new("Target_Child");
 
-    let mut lines = vec![
-        Line::header(Header::Utf8),
-        Line::header(Header::Begin),
-        Line::header(Header::Languages {
-            codes: LanguageCodes::new(vec![lang.clone()]),
-        }),
-        Line::header(Header::Participants {
-            entries: ParticipantEntries::new(vec![ParticipantEntry {
-                speaker_code: spk.clone(),
-                name: None,
-                role: role.clone(),
-            }]),
-        }),
-        Line::header(Header::ID(
-            IDHeader::new(lang.clone(), spk.clone(), role).with_corpus(corpus),
-        )),
-    ];
+    let mut lines = build::preamble(&lang, &[(spk.clone(), role)], corpus);
 
     // Each entry becomes one utterance with optional %pho tier
     for entry in &entries {
-        let words = vec![UtteranceContent::Word(Box::new(Word::simple(&entry.word)))];
+        let words = vec![build::word(&entry.word)?];
 
-        let main_tier = MainTier::new(spk.clone(), words, Terminator::Period { span: Span::DUMMY });
+        let main_tier = build::main_tier(spk.clone(), words, build::period());
 
         let mut utt = Utterance::new(main_tier);
 
-        if !entry.phonetic.is_empty()
-            && let (Some(label), Some(phon)) = (
-                NonEmptyString::new("pho"),
-                NonEmptyString::new(&entry.phonetic),
-            )
-        {
-            utt = utt.with_user_defined(label, phon);
+        if !entry.phonetic.is_empty() {
+            let tokens = entry
+                .phonetic
+                .split_whitespace()
+                .map(str::to_owned)
+                .collect();
+            utt = utt.add_dependent_tier(DependentTier::Pho(PhoTier::from_tokens(
+                talkbank_model::Location::Unlocated,
+                PhoTierType::Pho,
+                tokens,
+            )));
         }
 
         lines.push(Line::utterance(utt));
     }
 
-    lines.push(Line::header(Header::End));
+    lines.push(build::header(Header::End));
 
     Ok(ChatFile::new(lines))
 }

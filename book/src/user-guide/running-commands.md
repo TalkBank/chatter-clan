@@ -4,7 +4,7 @@
 ## Basic invocation
 
 ```bash
-chatter clan <command> [options] <input>
+chatter-clan <command> [options] <input>
 ```
 
 The `<input>` can be a single `.cha` file or a directory (all `.cha` files are processed recursively).
@@ -12,8 +12,8 @@ The `<input>` can be a single `.cha` file or a directory (all `.cha` files are p
 ## Getting help
 
 ```bash
-chatter clan --help              # List all commands
-chatter clan freq --help         # Help for a specific command
+chatter-clan --help              # List all commands
+chatter-clan freq --help         # Help for a specific command
 ```
 
 ## Command categories

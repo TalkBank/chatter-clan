@@ -1,8 +1,5 @@
 use super::*;
-use talkbank_model::Span;
-use talkbank_model::{
-    DependentTier, GraTier, GrammaticalRelation, MainTier, Terminator, UtteranceContent, Word,
-};
+use talkbank_model::{DependentTier, GrammaticalRelation, UtteranceContent};
 
 use crate::framework::FileContext;
 
@@ -13,12 +10,17 @@ fn make_utterance_with_gra(
 ) -> Utterance {
     let content: Vec<UtteranceContent> = words
         .iter()
-        .map(|w| UtteranceContent::Word(Box::new(Word::simple(*w))))
+        .map(|w| UtteranceContent::Word(Box::new(crate::test_support::word(*w))))
         .collect();
-    let main = MainTier::new(speaker, content, Terminator::Period { span: Span::DUMMY });
+    let main = crate::test_support::main_tier(speaker, content);
     let mut utt = Utterance::new(main);
-    utt.dependent_tiers
-        .push(DependentTier::Gra(GraTier::new_gra(relations)));
+    utt.dependent_tiers.push(
+        DependentTier::Gra(talkbank_model::GraTier::new_gra(
+            talkbank_model::Location::Unlocated,
+            relations,
+        ))
+        .into(),
+    );
     utt
 }
 
@@ -42,10 +44,10 @@ fn counts_ud_relations() {
         "CHI",
         &["he", "said", "wants", "go"],
         vec![
-            GrammaticalRelation::new(1, 2, "APPOS"),
-            GrammaticalRelation::new(2, 0, "ROOT"),
-            GrammaticalRelation::new(3, 2, "CCOMP"),
-            GrammaticalRelation::new(4, 3, "XCOMP"),
+            crate::test_support::rel(1, 2, "APPOS"),
+            crate::test_support::rel(2, 0, "ROOT"),
+            crate::test_support::rel(3, 2, "CCOMP"),
+            crate::test_support::rel(4, 3, "XCOMP"),
         ],
     );
     cmd.process_utterance(&u, &ctx, &mut state);
@@ -74,9 +76,9 @@ fn counts_legacy_relations() {
         "PAR",
         &["he", "said", "that"],
         vec![
-            GrammaticalRelation::new(1, 2, "SUBJ"),
-            GrammaticalRelation::new(2, 0, "ROOT"),
-            GrammaticalRelation::new(3, 2, "COMP"),
+            crate::test_support::rel(1, 2, "SUBJ"),
+            crate::test_support::rel(2, 0, "ROOT"),
+            crate::test_support::rel(3, 2, "COMP"),
         ],
     );
     cmd.process_utterance(&u, &ctx, &mut state);
@@ -101,8 +103,8 @@ fn skips_punct() {
         "CHI",
         &["go"],
         vec![
-            GrammaticalRelation::new(1, 0, "ROOT"),
-            GrammaticalRelation::new(2, 1, "PUNCT"),
+            crate::test_support::rel(1, 0, "ROOT"),
+            crate::test_support::rel(2, 1, "PUNCT"),
         ],
     );
     cmd.process_utterance(&u, &ctx, &mut state);
@@ -119,8 +121,10 @@ fn no_gra_tier_skips_utterance() {
     let chat_file = talkbank_model::ChatFile::new(vec![]);
     let ctx = file_ctx(&chat_file);
 
-    let content = vec![UtteranceContent::Word(Box::new(Word::simple("hello")))];
-    let main = MainTier::new("CHI", content, Terminator::Period { span: Span::DUMMY });
+    let content = vec![UtteranceContent::Word(Box::new(crate::test_support::word(
+        "hello",
+    )))];
+    let main = crate::test_support::main_tier("CHI", content);
     let u = Utterance::new(main);
     cmd.process_utterance(&u, &ctx, &mut state);
 
@@ -139,11 +143,11 @@ fn ratio_calculation() {
         "CHI",
         &["he", "said", "he", "wants", "go"],
         vec![
-            GrammaticalRelation::new(1, 2, "APPOS"),
-            GrammaticalRelation::new(2, 0, "ROOT"),
-            GrammaticalRelation::new(3, 4, "EXPL"),
-            GrammaticalRelation::new(4, 2, "CCOMP"),
-            GrammaticalRelation::new(5, 4, "XCOMP"),
+            crate::test_support::rel(1, 2, "APPOS"),
+            crate::test_support::rel(2, 0, "ROOT"),
+            crate::test_support::rel(3, 4, "EXPL"),
+            crate::test_support::rel(4, 2, "CCOMP"),
+            crate::test_support::rel(5, 4, "XCOMP"),
         ],
     );
     cmd.process_utterance(&u, &ctx, &mut state);

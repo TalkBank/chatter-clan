@@ -36,6 +36,15 @@ pub struct FileContext<'a> {
     pub line_map: Option<&'a LineMap>,
 }
 
+impl FileContext<'_> {
+    /// Line of the utterance's main tier, or `None` when the file was built
+    /// rather than parsed (no line map) or the tier has no source location.
+    pub fn utterance_line(&self, utterance: &talkbank_model::Utterance) -> Option<usize> {
+        let span = utterance.main.location.span()?;
+        Some(self.line_map?.line_of(span.start()))
+    }
+}
+
 /// Trait that all CLAN analysis commands implement.
 ///
 /// Replaces CUTT's `usage()`/`getflag()`/`init()`/`call()` contract.

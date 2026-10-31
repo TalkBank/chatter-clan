@@ -45,8 +45,10 @@ mod output;
 #[cfg(test)]
 mod tests;
 
+use std::path::PathBuf;
+
 use indexmap::IndexMap;
-use talkbank_model::{SpeakerCode, Utterance};
+use talkbank_model::{IDHeader, SpeakerCode, Utterance};
 
 use talkbank_model::model::content::word::UntranscribedStatus;
 
@@ -56,11 +58,33 @@ use crate::framework::word_filter::{
 };
 use crate::framework::{AnalysisCommand, FileContext, MorphemeCount, population_sd};
 
-pub use output::{MluResult, MluSpeakerResult};
+pub use output::{MluCountUnit, MluIdRow, MluResult, MluSpeakerResult};
+
+/// CLAN MLU output shape.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum MluOutputMode {
+    /// Normal per-speaker summary output.
+    #[default]
+    Summary,
+    /// CLAN `+d1`, one `@ID`-expanded row per speaker and input file.
+    IdRowsPerFile,
+    /// CLAN `+d1 +u`, one `@ID`-expanded row per speaker across all files.
+    IdRowsCombinedFiles,
+    /// CLAN `+d`, one SpreadsheetML workbook with a row per file and speaker.
+    Spreadsheet,
+}
+
+impl MluOutputMode {
+    const fn uses_id_rows(self) -> bool {
+        !matches!(self, Self::Summary)
+    }
+}
 
 /// Configuration for the MLU command.
 #[derive(Debug, Clone, Default)]
 pub struct MluConfig {
+    /// Selects normal summary, CLAN `+d1` ID rows, or CLAN `+d` SpreadsheetML.
+    pub output_mode: MluOutputMode,
     /// Use word count from main tier instead of morpheme count from %mor
     pub words_only: bool,
     /// Words that, when an utterance consists *solely* of them, cause
@@ -89,6 +113,8 @@ pub struct MluConfig {
 struct SpeakerMlu {
     /// Morpheme (or word) counts per utterance
     utterance_lengths: Vec<MorphemeCount>,
+    /// First parsed `@ID` header for this speaker in the input file.
+    id_header: Option<IDHeader>,
 }
 
 /// Accumulated state for MLU across all files.
@@ -96,6 +122,10 @@ struct SpeakerMlu {
 pub struct MluState {
     /// Per-speaker MLU data, keyed by speaker code
     by_speaker: IndexMap<SpeakerCode, SpeakerMlu>,
+    /// Per-file speaker data needed only by CLAN `+d1`.
+    by_file_speaker: IndexMap<(PathBuf, SpeakerCode), SpeakerMlu>,
+    /// Input order is significant for CLAN `+d1 +u`'s filename column.
+    processed_files: Vec<PathBuf>,
 }
 
 /// MLU command implementation.
@@ -136,7 +166,7 @@ impl AnalysisCommand for MluCommand {
     fn process_utterance(
         &self,
         utterance: &Utterance,
-        _file_context: &FileContext<'_>,
+        file_context: &FileContext<'_>,
         state: &mut Self::State,
     ) {
         // Skip utterances with no countable lexical content (e.g., "xxx .")
@@ -172,7 +202,7 @@ impl AnalysisCommand for MluCommand {
             .content
             .postcodes
             .iter()
-            .any(|postcode| postcode.text.as_str() == MLUE_EXCLUDE_POSTCODE)
+            .any(|postcode| postcode.text() == Some(MLUE_EXCLUDE_POSTCODE))
         {
             return;
         }
@@ -193,6 +223,16 @@ impl AnalysisCommand for MluCommand {
             crate::framework::count_traced_morphemes_in_utterance(utterance)
         };
 
+        let file_speaker = self.config.output_mode.uses_id_rows().then(|| {
+            state
+                .by_file_speaker
+                .entry((
+                    file_context.path.to_path_buf(),
+                    utterance.main.speaker.clone(),
+                ))
+                .or_default()
+        });
+
         // Always register the speaker so they appear in output, even when
         // no %mor tier is available (CLAN parity: shows "utterances = 0").
         let speaker_mlu = state
@@ -206,6 +246,34 @@ impl AnalysisCommand for MluCommand {
         // speaker above.
         if let Some(count) = count {
             speaker_mlu.utterance_lengths.push(count);
+            if let Some(file_speaker) = file_speaker {
+                file_speaker.utterance_lengths.push(count);
+            }
+        }
+    }
+
+    /// Capture the first `@ID` header for each processed speaker in this file.
+    fn end_file(&self, file_context: &FileContext<'_>, state: &mut Self::State) {
+        if !self.config.output_mode.uses_id_rows() {
+            return;
+        }
+
+        let path = file_context.path.to_path_buf();
+        state.processed_files.push(path.clone());
+
+        let mut id_by_speaker = IndexMap::<SpeakerCode, IDHeader>::new();
+        for id in file_context.chat_file.id_headers() {
+            id_by_speaker
+                .entry(id.speaker.clone())
+                .or_insert_with(|| id.clone());
+        }
+
+        for ((entry_path, speaker), data) in &mut state.by_file_speaker {
+            if entry_path == &path
+                && let Some(id) = id_by_speaker.get(speaker)
+            {
+                data.id_header = Some(id.clone());
+            }
         }
     }
 
@@ -231,12 +299,125 @@ impl AnalysisCommand for MluCommand {
                 })
                 .collect()
         };
+        let id_rows = build_id_rows(
+            state.by_file_speaker,
+            &state.processed_files,
+            self.config.output_mode,
+            self.config.combine_speakers,
+        );
         MluResult {
             speakers,
             combine_speakers: self.config.combine_speakers,
             re_included_untranscribed: self.config.re_included_untranscribed.clone(),
+            id_rows,
         }
     }
+}
+
+#[derive(Debug)]
+struct IdRowSpeaker {
+    speaker: SpeakerCode,
+    id_header: Option<IDHeader>,
+    utterance_lengths: Vec<MorphemeCount>,
+}
+
+#[derive(Debug)]
+struct IdRowScope {
+    file: PathBuf,
+    speakers: Vec<IdRowSpeaker>,
+}
+
+fn build_id_rows(
+    by_file_speaker: IndexMap<(PathBuf, SpeakerCode), SpeakerMlu>,
+    processed_files: &[PathBuf],
+    output_mode: MluOutputMode,
+    combine_speakers: bool,
+) -> Option<Vec<MluIdRow>> {
+    let scopes = match output_mode {
+        MluOutputMode::Summary => return None,
+        MluOutputMode::IdRowsPerFile | MluOutputMode::Spreadsheet => {
+            let mut by_file = IndexMap::<PathBuf, IndexMap<SpeakerCode, IdRowSpeaker>>::new();
+            for ((file, speaker), data) in by_file_speaker {
+                let row = by_file
+                    .entry(file)
+                    .or_default()
+                    .entry(speaker.clone())
+                    .or_insert_with(|| IdRowSpeaker {
+                        speaker,
+                        id_header: data.id_header.clone(),
+                        utterance_lengths: Vec::new(),
+                    });
+                if row.id_header.is_none() {
+                    row.id_header = data.id_header;
+                }
+                row.utterance_lengths.extend(data.utterance_lengths);
+            }
+            by_file
+                .into_iter()
+                .map(|(file, speakers)| IdRowScope {
+                    file,
+                    speakers: speakers.into_values().collect(),
+                })
+                .collect()
+        }
+        MluOutputMode::IdRowsCombinedFiles => {
+            let file = processed_files
+                .first()
+                .cloned()
+                .or_else(|| by_file_speaker.keys().next().map(|(file, _)| file.clone()));
+            let Some(file) = file else {
+                return Some(Vec::new());
+            };
+
+            let mut speakers = IndexMap::<SpeakerCode, IdRowSpeaker>::new();
+            for ((_, speaker), data) in by_file_speaker {
+                let row = speakers
+                    .entry(speaker.clone())
+                    .or_insert_with(|| IdRowSpeaker {
+                        speaker,
+                        id_header: data.id_header.clone(),
+                        utterance_lengths: Vec::new(),
+                    });
+                if row.id_header.is_none() {
+                    row.id_header = data.id_header;
+                }
+                row.utterance_lengths.extend(data.utterance_lengths);
+            }
+            vec![IdRowScope {
+                file,
+                speakers: speakers.into_values().collect(),
+            }]
+        }
+    };
+
+    let mut rows = Vec::new();
+    for scope in scopes {
+        for speaker in &scope.speakers {
+            let result = if combine_speakers {
+                aggregate_mlu(speaker.speaker.as_str(), &[])
+            } else {
+                aggregate_mlu(speaker.speaker.as_str(), &speaker.utterance_lengths)
+            };
+            rows.push(MluIdRow::Speaker {
+                file: scope.file.clone(),
+                id_header: speaker.id_header.clone().map(Box::new),
+                result,
+            });
+        }
+
+        if combine_speakers {
+            let combined_lengths: Vec<MorphemeCount> = scope
+                .speakers
+                .iter()
+                .flat_map(|speaker| speaker.utterance_lengths.iter().copied())
+                .collect();
+            rows.push(MluIdRow::Combined {
+                file: scope.file,
+                result: aggregate_mlu(COMBINED_SPEAKER_LABEL, &combined_lengths),
+            });
+        }
+    }
+    Some(rows)
 }
 
 /// Placeholder speaker code for the `+o3` pooled result; the CLAN renderer shows

@@ -28,8 +28,8 @@
 
 use smallvec::SmallVec;
 use talkbank_model::{
-    BracketedItem, ChatFile, DependentTier, Line, NonEmptyString, TextTier, UtteranceContent, Word,
-    WriteChat,
+    BracketedItem, ChatFile, DependentTier, Line, Location, RecoveryText, TextTier,
+    UtteranceContent, Word, WriteChat,
 };
 
 use crate::framework::word_filter::is_countable_word;
@@ -47,7 +47,7 @@ impl TransformCommand for FloCommand {
         file.lines.retain(|line| matches!(line, Line::Utterance(_)));
 
         // Add %flo tier to each utterance
-        for line in file.lines.iter_mut() {
+        for line in file.lines.as_mut_slice().iter_mut() {
             if let Line::Utterance(utterance) = line {
                 // Strip preceding headers from utterances (e.g., @Comment)
                 utterance.preceding_headers = SmallVec::new();
@@ -57,11 +57,11 @@ impl TransformCommand for FloCommand {
                     utterance.main.content.terminator.as_ref(),
                 );
 
-                if let Some(content) = NonEmptyString::new(flo_text) {
-                    let flo_tier = DependentTier::Flo(TextTier::new(content));
+                if let Ok(content) = RecoveryText::new(&flo_text) {
+                    let flo_tier = DependentTier::Flo(TextTier::new(Location::Unlocated, content));
 
                     // Insert %flo right after the main tier (before other dependent tiers)
-                    utterance.dependent_tiers.insert(0, flo_tier);
+                    utterance.dependent_tiers.insert(0, flo_tier.into());
                 }
             }
         }

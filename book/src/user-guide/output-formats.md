@@ -10,7 +10,7 @@ Every analysis command produces a typed result that can be rendered in multiple 
 Human-readable output, designed for terminal display:
 
 ```bash
-chatter clan freq file.cha
+chatter-clan freq file.cha
 ```
 
 ## CLAN-compatible text
@@ -22,7 +22,7 @@ Legacy CLAN output format, used for parity testing. Activated internally by `ren
 Structured output for programmatic consumption:
 
 ```bash
-chatter clan freq --format json file.cha
+chatter-clan freq --format json file.cha
 ```
 
 JSON output preserves all fields from the typed result struct, including metadata that text format may omit.
@@ -32,7 +32,7 @@ JSON output preserves all fields from the typed result struct, including metadat
 Tabular output for spreadsheet tools:
 
 ```bash
-chatter clan mlu --format csv file.cha
+chatter-clan mlu --format csv file.cha
 ```
 
 ## Transform commands: `-o, --output`
@@ -46,9 +46,9 @@ format converters (`chat2*`, `*2chat`) accept a shared
 target-format) bytes go. The default is stdout.
 
 ```bash
-chatter clan delim file.cha                       # writes to stdout
-chatter clan delim file.cha -o file-fixed.cha     # writes to a file
-chatter clan delim file.cha --output file-fixed.cha
+chatter-clan delim file.cha                       # writes to stdout
+chatter-clan delim file.cha -o file-fixed.cha     # writes to a file
+chatter-clan delim file.cha --output file-fixed.cha
 ```
 
 The `--format` flag does **not** apply to transform commands; they

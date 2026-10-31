@@ -10,7 +10,7 @@ Converts plain text files into CHAT format by splitting on sentence-ending punct
 ## Usage
 
 ```bash
-chatter clan text2chat input.txt
+chatter-clan text2chat input.txt
 ```
 
 ## Options

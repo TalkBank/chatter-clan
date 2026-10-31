@@ -14,8 +14,8 @@ Line numbers are formatted as 5-character right-aligned integers prefixed to non
 ## Usage
 
 ```bash
-chatter clan lines file.cha
-chatter clan lines --remove file.cha
+chatter-clan lines file.cha
+chatter-clan lines --remove file.cha
 ```
 
 ## Options

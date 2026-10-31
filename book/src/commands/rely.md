@@ -14,8 +14,8 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409232
 ## Usage
 
 ```bash
-chatter clan rely file1.cha file2.cha
-chatter clan rely file1.cha file2.cha --tier spa
+chatter-clan rely file1.cha file2.cha
+chatter-clan rely file1.cha file2.cha --tier spa
 ```
 
 ## Algorithm

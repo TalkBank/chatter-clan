@@ -9,7 +9,7 @@ use talkbank_model::SpeakerCode;
 
 use super::exit_with_error;
 
-pub(super) fn collect_word_patterns(
+pub(in super::super) fn collect_word_patterns(
     cli: &[String],
     files: &[PathBuf],
 ) -> Result<Vec<WordPattern>, LoadWordListError> {

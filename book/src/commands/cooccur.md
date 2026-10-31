@@ -12,8 +12,8 @@ COOCCUR is part of the FREQ family of commands and is useful for studying word c
 ## Usage
 
 ```bash
-chatter clan cooccur file.cha
-chatter clan cooccur file.cha --speaker CHI
+chatter-clan cooccur file.cha
+chatter-clan cooccur file.cha --speaker CHI
 ```
 
 ## Options (chatter-native)

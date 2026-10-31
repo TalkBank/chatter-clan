@@ -1,17 +1,14 @@
 use super::*;
 use crate::framework::CommandOutput;
-use talkbank_model::Span;
-use talkbank_model::{
-    DependentTier, MainTier, PhoTier, Terminator, Utterance, UtteranceContent, Word,
-};
+use talkbank_model::{DependentTier, PhoTier, Utterance, UtteranceContent};
 
 /// Build an utterance with %mod and %pho tiers.
 fn make_mod_pho_utterance(words: &[&str], mod_tokens: &[&str], pho_tokens: &[&str]) -> Utterance {
     let content: Vec<UtteranceContent> = words
         .iter()
-        .map(|w| UtteranceContent::Word(Box::new(Word::simple(*w))))
+        .map(|w| UtteranceContent::Word(Box::new(crate::test_support::word(*w))))
         .collect();
-    let main = MainTier::new("CHI", content, Terminator::Period { span: Span::DUMMY });
+    let main = crate::test_support::main_tier("CHI", content);
     let mut utt = Utterance::new(main);
 
     // Add %mod tier
@@ -19,16 +16,26 @@ fn make_mod_pho_utterance(words: &[&str], mod_tokens: &[&str], pho_tokens: &[&st
         .iter()
         .map(|t| PhoItem::Word(PhoWord::new(t.to_string())))
         .collect();
-    utt.dependent_tiers
-        .push(DependentTier::Mod(PhoTier::new_mod(mod_items)));
+    utt.dependent_tiers.push(
+        DependentTier::Mod(PhoTier::new_mod(
+            talkbank_model::Location::Unlocated,
+            mod_items,
+        ))
+        .into(),
+    );
 
     // Add %pho tier
     let pho_items: Vec<PhoItem> = pho_tokens
         .iter()
         .map(|t| PhoItem::Word(PhoWord::new(t.to_string())))
         .collect();
-    utt.dependent_tiers
-        .push(DependentTier::Pho(PhoTier::new_pho(pho_items)));
+    utt.dependent_tiers.push(
+        DependentTier::Pho(PhoTier::new_pho(
+            talkbank_model::Location::Unlocated,
+            pho_items,
+        ))
+        .into(),
+    );
 
     utt
 }
@@ -113,9 +120,10 @@ fn modrep_skips_without_both_tiers() {
     let file_ctx = file_ctx(&chat_file);
 
     // Utterance with only main tier, no %mod or %pho
-    let content: Vec<UtteranceContent> =
-        vec![UtteranceContent::Word(Box::new(Word::simple("hello")))];
-    let main = MainTier::new("CHI", content, Terminator::Period { span: Span::DUMMY });
+    let content: Vec<UtteranceContent> = vec![UtteranceContent::Word(Box::new(
+        crate::test_support::word("hello"),
+    ))];
+    let main = crate::test_support::main_tier("CHI", content);
     let utt = Utterance::new(main);
 
     cmd.process_utterance(&utt, &file_ctx, &mut state);

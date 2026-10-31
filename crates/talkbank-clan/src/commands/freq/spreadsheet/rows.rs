@@ -10,8 +10,8 @@ use std::collections::BTreeSet;
 
 use crate::framework::spreadsheet::{Cell, Row};
 
-use super::id_columns::{ID_COLUMN_COUNT, ID_COLUMN_HEADERS, id_header_to_cells};
 use super::{FreqFileSpeakerRow, FreqSpreadsheetMode};
+use crate::framework::id_columns::{ID_COLUMN_COUNT, ID_COLUMN_HEADERS, speaker_id_to_cells};
 
 /// Index of the speaker column within [`ID_COLUMN_HEADERS`] (`Code` for the
 /// `+d2`/`+d3` path). [`header_row`]'s `speaker_label` override relabels this
@@ -130,15 +130,7 @@ pub(super) fn data_row(
 /// The `@ID` columns for a row, or CLAN's `.|.|<sp>|.|...` fallback (Code only,
 /// other columns `.`) when the speaker has no `@ID` for the file.
 fn row_id_cells(row: &FreqFileSpeakerRow) -> Vec<Cell> {
-    match &row.id {
-        Some(id) => id_header_to_cells(id),
-        None => {
-            let mut cells = vec![Cell::empty(); ID_COLUMN_COUNT];
-            // Column order is Language, Corpus, Code, ...; Code is index 2.
-            cells[2] = Cell::text(row.speaker.clone());
-            cells
-        }
-    }
+    speaker_id_to_cells(row.id.as_ref(), &row.speaker)
 }
 
 /// The TTR cell from a token count and ratio: the ratio at three decimals, or

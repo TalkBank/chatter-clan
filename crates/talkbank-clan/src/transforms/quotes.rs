@@ -30,7 +30,7 @@ impl TransformCommand for QuotesCommand {
                 .content
                 .postcodes
                 .iter()
-                .any(|p| p.text == "\"")
+                .any(|p| p.text() == Some("\""))
             {
                 return Err(TransformError::Transform(format!(
                     "QUOTES encountered unsupported quote-extraction postcode [+ \"] on speaker {}. \
@@ -55,16 +55,14 @@ pub fn run_quotes(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use talkbank_model::Span;
-    use talkbank_model::{ChatFile, Line, MainTier, Postcode, Terminator, Utterance};
+
+    use talkbank_model::{ChatFile, Line, Postcode, Utterance};
 
     #[test]
     fn quotes_is_noop_without_quote_extraction_postcode() {
-        let mut file = ChatFile::new(vec![Line::utterance(Utterance::new(MainTier::new(
-            "MOT",
-            vec![],
-            Terminator::Period { span: Span::DUMMY },
-        )))]);
+        let mut file = ChatFile::new(vec![Line::utterance(Utterance::new(
+            crate::test_support::main_tier("MOT", vec![]),
+        ))]);
 
         QuotesCommand
             .transform(&mut file)
@@ -73,8 +71,10 @@ mod tests {
 
     #[test]
     fn quotes_errors_on_unsupported_quote_extraction_postcode() {
-        let mut main = MainTier::new("MOT", vec![], Terminator::Period { span: Span::DUMMY });
-        main.content.postcodes.push(Postcode::new("\""));
+        let mut main = crate::test_support::main_tier("MOT", vec![]);
+        main.content
+            .postcodes
+            .push(Postcode::new(talkbank_model::Location::Unlocated, "\""));
         let mut file = ChatFile::new(vec![Line::utterance(Utterance::new(main))]);
 
         let err = QuotesCommand

@@ -20,9 +20,9 @@ The legacy CLAN manual entry is at
 "all gems" mode (unlike `freq`, where `--gem` is optional).
 
 ```bash
-chatter clan gemfreq --gem story file.cha
-chatter clan gemfreq -g story file.cha               # short form
-chatter clan gemfreq --gem story --gem retell file.cha   # multiple gems
+chatter-clan gemfreq --gem story file.cha
+chatter-clan gemfreq -g story file.cha               # short form
+chatter-clan gemfreq --gem story --gem retell file.cha   # multiple gems
 ```
 
 ## Options

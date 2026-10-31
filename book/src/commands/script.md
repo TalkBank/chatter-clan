@@ -12,8 +12,8 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409234
 ## Usage
 
 ```bash
-chatter clan script file.cha --template template.cha
-chatter clan script corpus/ --template template.cha --speaker CHI
+chatter-clan script file.cha --template template.cha
+chatter-clan script corpus/ --template template.cha --speaker CHI
 ```
 
 ## Algorithm

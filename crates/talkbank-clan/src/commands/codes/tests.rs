@@ -1,15 +1,14 @@
 use super::*;
-use talkbank_model::Span;
-use talkbank_model::{
-    CodTier, DependentTier, MainTier, Terminator, Utterance, UtteranceContent, Word,
-};
+use talkbank_model::{DependentTier, Utterance, UtteranceContent};
 
 fn make_utterance_with_cod(speaker: &str, cod_text: &str) -> Utterance {
-    let content = vec![UtteranceContent::Word(Box::new(Word::simple("hello")))];
-    let main = MainTier::new(speaker, content, Terminator::Period { span: Span::DUMMY });
+    let content = vec![UtteranceContent::Word(Box::new(crate::test_support::word(
+        "hello",
+    )))];
+    let main = crate::test_support::main_tier(speaker, content);
     let mut utt = Utterance::new(main);
     utt.dependent_tiers
-        .push(DependentTier::Cod(CodTier::from_text(cod_text)));
+        .push(DependentTier::Cod(crate::test_support::cod_tier(cod_text)).into());
     utt
 }
 

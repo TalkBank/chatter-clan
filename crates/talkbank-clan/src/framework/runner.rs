@@ -18,7 +18,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use talkbank_model::validation::ValidationState;
 use talkbank_model::{ChatFile, IDHeader, ParseValidateOptions, SpeakerCode};
 use talkbank_transform::{PipelineError, parse_file_and_validate};
 use tracing::{debug, warn};
@@ -253,8 +252,8 @@ impl AnalysisRunner {
 /// A file with no `@ID` headers fails the `id-filter` prefilter
 /// (absence cannot satisfy a positive match), but passes the
 /// no-filter case (empty map, all speakers permitted).
-fn scan_id_headers<'a, S: ValidationState>(
-    chat_file: &'a ChatFile<S>,
+fn scan_id_headers<'a>(
+    chat_file: &'a ChatFile,
     filter: Option<&IdFilter>,
 ) -> (bool, HashMap<SpeakerCode, &'a IDHeader>) {
     let mut admits = filter.is_none();

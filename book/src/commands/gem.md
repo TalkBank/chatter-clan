@@ -12,16 +12,16 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409206
 ## Usage
 
 ```bash
-chatter clan gem file.cha
-chatter clan gem --gem story file.cha
+chatter-clan gem file.cha
+chatter-clan gem --gem story file.cha
 ```
 
 ## CLAN Equivalence
 
 | CLAN command                    | Rust equivalent                            |
 |---------------------------------|--------------------------------------------|
-| `gem file.cha`                  | `chatter clan gem file.cha`                |
-| `gem +g"story" file.cha`        | `chatter clan gem --gem story file.cha`    |
+| `gem file.cha`                  | `chatter-clan gem file.cha`                |
+| `gem +g"story" file.cha`        | `chatter-clan gem --gem story file.cha`    |
 
 ## Options
 

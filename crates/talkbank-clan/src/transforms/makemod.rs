@@ -25,7 +25,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use talkbank_model::{ChatFile, DependentTier, Line, NonEmptyString, UserDefinedDependentTier};
+use talkbank_model::{ChatFile, DependentTier, Line, Location, PhoTier, PhoTierType};
 
 use crate::framework::word_filter::countable_words;
 use crate::framework::{TransformCommand, TransformError};
@@ -60,7 +60,7 @@ impl TransformCommand for MakemodCommand {
 
     /// Look up each countable word in the lexicon and append a `%mod` tier.
     fn transform(&self, file: &mut ChatFile) -> Result<(), TransformError> {
-        for line in file.lines.iter_mut() {
+        for line in file.lines.as_mut_slice().iter_mut() {
             if let Line::Utterance(utt) = line {
                 let mut mod_parts: Vec<String> = Vec::new();
 
@@ -78,18 +78,14 @@ impl TransformCommand for MakemodCommand {
                 }
 
                 if !mod_parts.is_empty() {
-                    let mod_text = mod_parts.join(" ");
-                    if let (Some(label), Some(content)) =
-                        (NonEmptyString::new("mod"), NonEmptyString::new(&mod_text))
-                    {
-                        utt.dependent_tiers.push(DependentTier::UserDefined(
-                            UserDefinedDependentTier {
-                                label,
-                                content,
-                                span: talkbank_model::Span::DUMMY,
-                            },
-                        ));
-                    }
+                    utt.dependent_tiers.push(
+                        DependentTier::Mod(PhoTier::from_tokens(
+                            Location::Unlocated,
+                            PhoTierType::Mod,
+                            mod_parts,
+                        ))
+                        .into(),
+                    );
                 }
             }
         }

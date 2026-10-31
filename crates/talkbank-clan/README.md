@@ -1,15 +1,15 @@
 # talkbank-clan
 
 **Status:** Current
-**Last modified:** 2026-05-30 20:02 EDT
+**Last modified:** 2026-10-31
 
 Rust reimplementation of [CLAN](https://talkbank.org/0info/manuals/CLAN.html)
 (Computerized Language Analysis) commands for
 [CHAT transcripts](https://talkbank.org/0info/manuals/CHAT.html).
 
 **Use this crate when** you need typed CLAN-style analyses inside Rust.
-**Use `chatter clan ...` instead** when you want the supported command-line
-surface.
+For the standalone command-line interface, use the `chatter-clan` binary
+provided by the sibling `chatter-clan-cli` crate.
 
 ## Overview
 
@@ -27,11 +27,12 @@ The crate currently exposes three command families:
 - **Format converters**: convert between CHAT and other transcription
   formats (SRT, ELAN, Praat TextGrid, SALT, etc.)
 
-All commands are invoked via `chatter clan <command>`. Legacy CLAN `+flag` syntax
-(e.g., `+t*CHI`, `+s"word"`) is supported and automatically translated to modern flags.
+Commands are invoked via `chatter-clan <command>`. Legacy CLAN `+flag` syntax
+(e.g., `+t*CHI`, `+s"word"`) is supported where implemented and translated to
+the corresponding CLI options. Parity is active work and is not complete.
 
 For the current parity/support posture, see the
-[CLAN parity status page](https://github.com/TalkBank/chatter/blob/main/book/src/clan-reference/parity-status.md).
+[CLAN parity status page](../../book/src/parity-status.md).
 
 ## Analysis Commands
 
@@ -119,34 +120,34 @@ The shared infrastructure in `src/framework/` replaces CLAN's CUTT framework:
 
 ## Usage
 
-Commands are usually invoked through the `chatter` CLI (`crates/talkbank-cli/`).
-For embedded Rust usage, start with `talkbank_clan::framework::AnalysisRunner`
+Commands are invoked through the standalone `chatter-clan` CLI. For embedded
+Rust usage, start with `talkbank_clan::framework::AnalysisRunner`
 plus one of the concrete command types in `commands`, `transforms`, or `converters`.
 
 ### Word frequency analysis
 
 ```bash
-chatter clan freq transcript.cha
-chatter clan freq '+t*CHI' transcript.cha       # CLAN syntax
+chatter-clan freq transcript.cha
+chatter-clan freq '+t*CHI' transcript.cha       # CLAN syntax
 ```
 
 ### MLU for a specific speaker
 
 ```bash
-chatter clan mlu transcript.cha --speaker CHI
-chatter clan mlu '+t*CHI' transcript.cha         # CLAN syntax
+chatter-clan mlu transcript.cha --speaker CHI
+chatter-clan mlu '+t*CHI' transcript.cha         # CLAN syntax
 ```
 
 ### Generate simplified fluent output
 
 ```bash
-chatter clan flo transcript.cha -o output.cha
+chatter-clan flo transcript.cha -o output.cha
 ```
 
 ### Convert CHAT to SRT subtitles
 
 ```bash
-chatter clan chat2srt transcript.cha -o transcript.srt
+chatter-clan chat2srt transcript.cha -o transcript.srt
 ```
 
 ### CLAN flag equivalents

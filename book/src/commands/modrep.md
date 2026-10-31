@@ -12,8 +12,8 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409226
 ## Usage
 
 ```bash
-chatter clan modrep file.cha
-chatter clan modrep file.cha --speaker CHI
+chatter-clan modrep file.cha
+chatter-clan modrep file.cha --speaker CHI
 ```
 
 ## Algorithm

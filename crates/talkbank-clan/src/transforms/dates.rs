@@ -18,7 +18,7 @@
 //! - Reads `@Date` and `@Birth` from structured header variants instead of
 //!   parsing raw `@` lines with string splitting.
 
-use talkbank_model::{ChatFile, Header, Line};
+use talkbank_model::{ChatFile, CommentContent, Header, Line};
 
 use crate::framework::{TransformCommand, TransformError};
 
@@ -75,13 +75,13 @@ impl TransformCommand for DatesCommand {
         let insert_idx = find_age_insert_position(&file.lines);
 
         for (i, (participant, age)) in age_comments.into_iter().enumerate() {
-            let header_text = format!("@Comment:\tAge of {participant} is {age}");
-            let header = Header::Unknown {
-                text: talkbank_model::WarningText::new(header_text),
-                parse_reason: None,
-                suggested_fix: None,
-            };
-            file.lines.insert(insert_idx + i, Line::header(header));
+            let content = CommentContent::try_from_text(format!("Age of {participant} is {age}"))
+                .map_err(|error| TransformError::Transform(error.to_string()))?;
+            let header = Header::Comment { content };
+            file.lines.insert(
+                insert_idx + i,
+                Line::header(talkbank_model::Location::Unlocated, header),
+            );
         }
 
         Ok(())

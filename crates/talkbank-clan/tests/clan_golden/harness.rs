@@ -402,7 +402,26 @@ pub fn run_rust_filtered(
 ) -> String {
     use talkbank_clan::framework::{AnalysisRunner, CommandOutput};
 
-    let files = vec![file.to_path_buf()];
+    let chip_input_dir = if command_name == "chip" {
+        Some(tempfile::tempdir().expect("create CHIP stdin input directory"))
+    } else {
+        None
+    };
+    let input_file = match chip_input_dir.as_ref() {
+        Some(temp_dir) => {
+            let pipeout = temp_dir.path().join("pipeout");
+            std::fs::copy(file, &pipeout).unwrap_or_else(|error| {
+                panic!(
+                    "copy {} to {} for CHIP golden: {error}",
+                    file.display(),
+                    pipeout.display()
+                )
+            });
+            pipeout
+        }
+        None => file.to_path_buf(),
+    };
+    let files = vec![input_file];
     let runner = AnalysisRunner::with_filter(filter.unwrap_or_default());
 
     macro_rules! run_and_render {
@@ -440,7 +459,9 @@ pub fn run_rust_filtered(
             // (CLAN FREQ preserves by default; `+k` folds). Used by both the
             // keying and the per-word `+s` filter.
             let case_sensitive = talkbank_clan::service_types::AnalysisCommandName::Freq
-                .effective_case_sensitive(extra_args.contains(&"--case-sensitive"));
+                .effective_case_sensitive(
+                    extra_args.contains(&"--plus-k") || extra_args.contains(&"--case-sensitive"),
+                );
             run_and_render!(FreqCommand::new(FreqConfig {
                 count_source,
                 capitalization,
@@ -526,8 +547,8 @@ pub fn run_rust_filtered(
             }))
         }
         "chip" => {
-            use talkbank_clan::commands::chip::ChipCommand;
-            run_and_render!(ChipCommand)
+            use talkbank_clan::commands::chip::{ChipCommand, ChipConfig};
+            run_and_render!(ChipCommand::new(ChipConfig::default()))
         }
         "gemlist" => {
             use talkbank_clan::commands::gemlist::GemlistCommand;
@@ -549,7 +570,10 @@ pub fn run_rust_filtered(
                 // Effective preserve-case state via the shared per-command
                 // polarity (CLAN VOCD preserves by default; `+k` folds).
                 case_sensitive: talkbank_clan::service_types::AnalysisCommandName::Vocd
-                    .effective_case_sensitive(extra_args.contains(&"--case-sensitive")),
+                    .effective_case_sensitive(
+                        extra_args.contains(&"--plus-k")
+                            || extra_args.contains(&"--case-sensitive"),
+                    ),
                 ..VocdConfig::default()
             };
             run_and_render!(VocdCommand::new(config))

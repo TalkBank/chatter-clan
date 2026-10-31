@@ -10,9 +10,9 @@ Counts turns and tracks for each word the first and last turn in which it appear
 ## Usage
 
 ```bash
-chatter clan dist file.cha
-chatter clan dist --speaker CHI file.cha
-chatter clan dist --format json file.cha
+chatter-clan dist file.cha
+chatter-clan dist --speaker CHI file.cha
+chatter-clan dist --format json file.cha
 ```
 
 ## Options (chatter-native)

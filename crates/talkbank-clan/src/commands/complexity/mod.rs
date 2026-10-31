@@ -219,7 +219,7 @@ impl AnalysisCommand for ComplexityCommand {
 
         // Find %gra tier and use typed relations
         let gra_tier = utterance.dependent_tiers.iter().find_map(|dep| {
-            if let DependentTier::Gra(gra) = dep {
+            if let DependentTier::Gra(gra) = &dep.tier {
                 Some(gra)
             } else {
                 None

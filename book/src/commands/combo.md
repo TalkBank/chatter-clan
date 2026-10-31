@@ -12,9 +12,9 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409095
 ## Usage
 
 ```bash
-chatter clan combo -S "want+cookie" file.cha
-chatter clan combo -S "want,milk" file.cha
-chatter clan combo -S "want+cookie" --speaker CHI file.cha
+chatter-clan combo -S "want+cookie" file.cha
+chatter-clan combo -S "want,milk" file.cha
+chatter-clan combo -S "want+cookie" --speaker CHI file.cha
 ```
 
 ## Options (chatter-native)
@@ -105,9 +105,9 @@ chatter's word-oriented match (no analog for `+g1`).
 
 | CLAN command | Rust equivalent |
 |---|---|
-| `combo +s"want^cookie" file.cha` | `chatter clan combo file.cha -S "want+cookie"` |
-| `combo +s"want\|milk" file.cha` | `chatter clan combo file.cha -S "want,milk"` |
-| `combo +s"want^cookie" +t*CHI file.cha` | `chatter clan combo file.cha -S "want+cookie" --speaker CHI` |
+| `combo +s"want^cookie" file.cha` | `chatter-clan combo file.cha -S "want+cookie"` |
+| `combo +s"want\|milk" file.cha` | `chatter-clan combo file.cha -S "want,milk"` |
+| `combo +s"want^cookie" +t*CHI file.cha` | `chatter-clan combo file.cha -S "want+cookie" --speaker CHI` |
 
 ## Display Modes (`+dN` / `--display-mode N`), DRAFT, awaiting PI review
 

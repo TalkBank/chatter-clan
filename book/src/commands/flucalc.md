@@ -12,9 +12,9 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409273
 ## Usage
 
 ```bash
-chatter clan flucalc file.cha
-chatter clan flucalc --speaker CHI file.cha
-chatter clan flucalc --format json file.cha
+chatter-clan flucalc file.cha
+chatter-clan flucalc --speaker CHI file.cha
+chatter-clan flucalc --format json file.cha
 ```
 
 ## Options (chatter-native)

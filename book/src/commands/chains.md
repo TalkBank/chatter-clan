@@ -16,9 +16,9 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409147
 ## Usage
 
 ```bash
-chatter clan chains file.cha
-chatter clan chains --speaker CHI file.cha
-chatter clan chains --tier cod file.cha
+chatter-clan chains file.cha
+chatter-clan chains --speaker CHI file.cha
+chatter-clan chains --tier cod file.cha
 ```
 
 ## Options (chatter-native)

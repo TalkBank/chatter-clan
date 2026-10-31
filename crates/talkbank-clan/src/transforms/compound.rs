@@ -20,7 +20,7 @@
 
 use talkbank_model::{ChatFile, Line, UtteranceContent, Word};
 
-use crate::framework::{TransformCommand, TransformError};
+use crate::framework::{TransformCommand, TransformError, replace_word_text};
 
 /// Configuration for the COMPOUND command.
 pub struct CompoundConfig {
@@ -49,9 +49,9 @@ impl TransformCommand for CompoundCommand {
             return Ok(());
         }
 
-        for line in file.lines.iter_mut() {
+        for line in file.lines.as_mut_slice().iter_mut() {
             if let Line::Utterance(utt) = line {
-                normalize_compounds(&mut utt.main.content.content);
+                normalize_compounds(utt.main.content.content.as_mut_slice())?;
             }
         }
         Ok(())
@@ -59,33 +59,34 @@ impl TransformCommand for CompoundCommand {
 }
 
 /// Normalize compound words in utterance content.
-fn normalize_compounds(items: &mut [UtteranceContent]) {
+fn normalize_compounds(items: &mut [UtteranceContent]) -> Result<(), TransformError> {
     for item in items.iter_mut() {
         match item {
-            UtteranceContent::Word(word) => normalize_compound_word(word),
+            UtteranceContent::Word(word) => normalize_compound_word(word)?,
             UtteranceContent::AnnotatedWord(annotated) => {
-                normalize_compound_word(&mut annotated.inner);
+                normalize_compound_word(&mut annotated.inner)?;
             }
             UtteranceContent::ReplacedWord(replaced) => {
-                normalize_compound_word(&mut replaced.word);
-                for rep in replaced.replacement.words.iter_mut() {
-                    normalize_compound_word(rep);
+                normalize_compound_word(&mut replaced.word)?;
+                for rep in replaced.replacement.words.as_mut_slice().iter_mut() {
+                    normalize_compound_word(rep)?;
                 }
             }
             UtteranceContent::Group(group) => {
-                for bi in group.content.content.iter_mut() {
+                for bi in group.content.content.as_mut_slice().iter_mut() {
                     if let talkbank_model::BracketedItem::Word(w) = bi {
-                        normalize_compound_word(w);
+                        normalize_compound_word(w)?;
                     }
                 }
             }
             _ => {}
         }
     }
+    Ok(())
 }
 
 /// Normalize a single compound word: convert dashes to plus signs.
-fn normalize_compound_word(word: &mut Word) {
+fn normalize_compound_word(word: &mut Word) -> Result<(), TransformError> {
     let raw = word.raw_text().to_owned();
     if raw.contains('-') && !raw.starts_with('&') && !raw.starts_with('0') {
         // Only convert dashes that look like compound joins
@@ -97,9 +98,10 @@ fn normalize_compound_word(word: &mut Word) {
                 .all(|p| !p.is_empty() && p.chars().all(|c| c.is_alphabetic()))
         {
             let normalized = parts.join("+");
-            word.replace_simple_text(normalized);
+            replace_word_text(word, &normalized)?;
         }
     }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -108,23 +110,23 @@ mod tests {
 
     #[test]
     fn normalize_dash_compound() {
-        let mut word = Word::simple("ice-cream");
-        normalize_compound_word(&mut word);
+        let mut word = crate::test_support::word("ice-cream");
+        normalize_compound_word(&mut word).expect("valid replacement");
         assert_eq!(word.raw_text(), "ice+cream");
     }
 
     #[test]
     fn preserve_filler_prefix() {
-        let mut word = Word::simple("&-uh");
-        normalize_compound_word(&mut word);
+        let mut word = crate::test_support::word("&-uh");
+        normalize_compound_word(&mut word).expect("valid replacement");
         assert_eq!(word.raw_text(), "&-uh");
     }
 
     #[test]
     fn preserve_omission_prefix() {
-        let mut word = Word::simple("0word");
+        let mut word = crate::test_support::word("0word");
         let original = word.raw_text().to_owned();
-        normalize_compound_word(&mut word);
+        normalize_compound_word(&mut word).expect("valid replacement");
         assert_eq!(word.raw_text(), original);
     }
 }

@@ -38,8 +38,8 @@ than a finished feature. The runnable examples below therefore use FREQ.
 Make the analysis read only the named dependent tier:
 
 ```bash
-chatter clan freq --tier mor file.cha
-chatter clan freq +t%mor file.cha
+chatter-clan freq --tier mor file.cha
+chatter-clan freq +t%mor file.cha
 ```
 
 CLAN equivalent: `+t%mor`. On FREQ this counts items on the `%mor` tier; on a
@@ -50,8 +50,8 @@ cluster-echo command it would show only the `%mor` tier with each match.
 Drop a dependent tier:
 
 ```bash
-chatter clan freq --exclude-tier gra file.cha
-chatter clan freq -t%gra file.cha
+chatter-clan freq --exclude-tier gra file.cha
+chatter-clan freq -t%gra file.cha
 ```
 
 CLAN equivalent: `-t%gra`.

@@ -24,7 +24,7 @@ use crate::commands::kideval::KidevalCommand;
 use crate::commands::kwal::KwalCommand;
 use crate::commands::maxwd::MaxwdCommand;
 use crate::commands::mlt::MltCommand;
-use crate::commands::mlu::MluCommand;
+use crate::commands::mlu::{MluCommand, MluCountUnit, MluOutputMode};
 use crate::commands::modrep::ModrepCommand;
 use crate::commands::mortable::MortableCommand;
 use crate::commands::phonfreq::PhonfreqCommand;
@@ -72,6 +72,11 @@ impl AnalysisService {
     ) -> Result<Value, AnalysisServiceError> {
         match request {
             AnalysisRequest::Freq(config) => self.run_json(&FreqCommand::new(config), files),
+            AnalysisRequest::Mlu(config) if config.output_mode == MluOutputMode::Spreadsheet => {
+                Err(AnalysisServiceError::InvalidRequest(
+                    "mlu +d requires spreadsheet output".to_owned(),
+                ))
+            }
             AnalysisRequest::Mlu(config) => self.run_json(&MluCommand::new(config), files),
             AnalysisRequest::Mlt(config) => self.run_json(&MltCommand::new(config), files),
             AnalysisRequest::Wdlen => self.run_json(&WdlenCommand, files),
@@ -84,7 +89,7 @@ impl AnalysisService {
             AnalysisRequest::Combo(config) => self.run_json(&ComboCommand::new(config), files),
             AnalysisRequest::Cooccur(config) => self.run_json(&CooccurCommand::new(config), files),
             AnalysisRequest::Dist(config) => self.run_json(&DistCommand::new(config), files),
-            AnalysisRequest::Chip => self.run_json(&ChipCommand, files),
+            AnalysisRequest::Chip(config) => self.run_json(&ChipCommand::new(config), files),
             AnalysisRequest::Phonfreq => self.run_json(&PhonfreqCommand, files),
             AnalysisRequest::Modrep => self.run_json(&ModrepCommand, files),
             AnalysisRequest::Vocd(config) => self.run_json(&VocdCommand::new(config), files),
@@ -151,6 +156,11 @@ impl AnalysisService {
             AnalysisRequest::Freq(config) => {
                 self.run_rendered(&FreqCommand::new(config), files, format)
             }
+            AnalysisRequest::Mlu(config) if config.output_mode == MluOutputMode::Spreadsheet => {
+                Err(AnalysisServiceError::InvalidRequest(
+                    "mlu +d requires spreadsheet output".to_owned(),
+                ))
+            }
             AnalysisRequest::Mlu(config) => {
                 self.run_rendered(&MluCommand::new(config), files, format)
             }
@@ -181,7 +191,9 @@ impl AnalysisService {
             AnalysisRequest::Dist(config) => {
                 self.run_rendered(&DistCommand::new(config), files, format)
             }
-            AnalysisRequest::Chip => self.run_rendered(&ChipCommand, files, format),
+            AnalysisRequest::Chip(config) => {
+                self.run_rendered(&ChipCommand::new(config), files, format)
+            }
             AnalysisRequest::Phonfreq => self.run_rendered(&PhonfreqCommand, files, format),
             AnalysisRequest::Modrep => self.run_rendered(&ModrepCommand, files, format),
             AnalysisRequest::Vocd(config) => {
@@ -243,11 +255,11 @@ impl AnalysisService {
         }
     }
 
-    /// Execute a FREQ `+d2` / `+d3` request and build the aggregate
+    /// Execute a FREQ spreadsheet or MLU `+d` request and build its
     /// SpreadsheetML [`Workbook`] across the input files.
     ///
-    /// Only FREQ in a spreadsheet mode is supported; any other request, or
-    /// FREQ without `+d2`/`+d3`, is an [`AnalysisServiceError::InvalidRequest`].
+    /// Any request without a supported spreadsheet mode is an
+    /// [`AnalysisServiceError::InvalidRequest`].
     pub fn execute_spreadsheet(
         &self,
         request: AnalysisRequest,
@@ -264,8 +276,39 @@ impl AnalysisService {
                 let result = self.runner.run(&FreqCommand::new(config), files)?;
                 Ok(result.to_spreadsheet(mode, mor_based))
             }
+            AnalysisRequest::Mlu(config) => {
+                if config.output_mode != MluOutputMode::Spreadsheet {
+                    return Err(AnalysisServiceError::InvalidRequest(
+                        "mlu spreadsheet output requires +d".to_owned(),
+                    ));
+                }
+                let Some(first_file) = files.first() else {
+                    return Err(AnalysisServiceError::InvalidRequest(
+                        "mlu +d requires at least one input file".to_owned(),
+                    ));
+                };
+                let output_path = first_file.with_extension("mlu.xls");
+                let worksheet_name = output_path
+                    .file_name()
+                    .unwrap_or_else(|| output_path.as_os_str())
+                    .to_string_lossy()
+                    .into_owned();
+                let count_unit = if config.words_only {
+                    MluCountUnit::Words
+                } else {
+                    MluCountUnit::Morphemes
+                };
+                let result = self.runner.run(&MluCommand::new(config), files)?;
+                result
+                    .to_spreadsheet(&worksheet_name, count_unit)
+                    .ok_or_else(|| {
+                        AnalysisServiceError::InvalidRequest(
+                            "mlu spreadsheet rows were not produced".to_owned(),
+                        )
+                    })
+            }
             _ => Err(AnalysisServiceError::InvalidRequest(
-                "spreadsheet output is only supported for freq +d2/+d3".to_owned(),
+                "spreadsheet output is only supported for freq +d2/+d3 and mlu +d".to_owned(),
             )),
         }
     }
@@ -291,6 +334,11 @@ impl AnalysisService {
         match request {
             AnalysisRequest::Freq(config) => {
                 self.run_rendered_per_file(&FreqCommand::new(config), files, format)
+            }
+            AnalysisRequest::Mlu(config) if config.output_mode == MluOutputMode::Spreadsheet => {
+                Err(AnalysisServiceError::InvalidRequest(
+                    "mlu +d requires aggregate spreadsheet output".to_owned(),
+                ))
             }
             AnalysisRequest::Mlu(config) => {
                 self.run_rendered_per_file(&MluCommand::new(config), files, format)
@@ -322,7 +370,9 @@ impl AnalysisService {
             AnalysisRequest::Dist(config) => {
                 self.run_rendered_per_file(&DistCommand::new(config), files, format)
             }
-            AnalysisRequest::Chip => self.run_rendered_per_file(&ChipCommand, files, format),
+            AnalysisRequest::Chip(config) => {
+                self.run_rendered_per_file(&ChipCommand::new(config), files, format)
+            }
             AnalysisRequest::Phonfreq => {
                 self.run_rendered_per_file(&PhonfreqCommand, files, format)
             }

@@ -13,7 +13,7 @@
 //!
 //! | CLAN command                     | Rust equivalent                               |
 //! |----------------------------------|-----------------------------------------------|
-//! | `chat2elan +e.wav file.cha`      | `chatter clan chat2elan file.cha`             |
+//! | `chat2elan +e.wav file.cha`      | `chatter-clan chat2elan file.cha`             |
 //!
 //! # Differences from CLAN
 //!
@@ -25,7 +25,7 @@
 
 use talkbank_model::{ChatFile, Line, WriteChat};
 
-use crate::framework::TransformError;
+use crate::framework::{TransformError, parsed_bullet};
 
 /// Convert a CHAT file to ELAN EAF format.
 pub fn chat_to_elan(chat: &ChatFile) -> Result<String, TransformError> {
@@ -54,7 +54,8 @@ pub fn chat_to_elan_with_options(
                 .map(|i| full_text[i + 2..].trim().to_owned())
                 .unwrap_or_else(|| full_text.trim().to_owned());
 
-            let (start_ms, end_ms) = if let Some(bullet) = &utt.main.content.bullet {
+            let (start_ms, end_ms) = if let Some(state) = &utt.main.content.bullet {
+                let bullet = parsed_bullet(state)?;
                 (bullet.timing.start_ms, bullet.timing.end_ms)
             } else {
                 // No timing, use sequential placeholders
@@ -173,43 +174,28 @@ fn xml_escape(s: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use talkbank_model::Span;
     use talkbank_model::{
-        Bullet, Header, IDHeader, LanguageCode, LanguageCodes, MainTier, ParticipantEntries,
-        ParticipantEntry, ParticipantRole, SpeakerCode, Terminator, Utterance, UtteranceContent,
-        Word,
+        BulletState, Header, ParticipantRole, SpeakerCode, Utterance, UtteranceContent,
     };
 
     fn simple_chat() -> ChatFile {
         let spk = SpeakerCode::new("CHI");
-        let lang = LanguageCode::new("eng");
-
+        let lang = crate::converters::build::language("eng").expect("valid language");
         let words = vec![
-            UtteranceContent::Word(Box::new(Word::simple("hello"))),
-            UtteranceContent::Word(Box::new(Word::simple("world"))),
+            UtteranceContent::Word(Box::new(crate::test_support::word("hello"))),
+            UtteranceContent::Word(Box::new(crate::test_support::word("world"))),
         ];
-        let mut main = MainTier::new(spk.clone(), words, Terminator::Period { span: Span::DUMMY });
-        main.content.bullet = Some(Bullet::new(0, 1500));
+        let mut main = crate::test_support::main_tier("CHI", words);
+        main.content.bullet = Some(BulletState::Parsed(crate::test_support::bullet(0, 1500)));
 
-        ChatFile::new(vec![
-            Line::header(Header::Utf8),
-            Line::header(Header::Begin),
-            Line::header(Header::Languages {
-                codes: LanguageCodes::new(vec![lang.clone()]),
-            }),
-            Line::header(Header::Participants {
-                entries: ParticipantEntries::new(vec![ParticipantEntry {
-                    speaker_code: spk.clone(),
-                    name: None,
-                    role: ParticipantRole::new("Child"),
-                }]),
-            }),
-            Line::header(Header::ID(
-                IDHeader::new(lang, spk, ParticipantRole::new("Child")).with_corpus("test"),
-            )),
-            Line::utterance(Utterance::new(main)),
-            Line::header(Header::End),
-        ])
+        let mut lines = crate::converters::build::preamble(
+            &lang,
+            &[(spk, ParticipantRole::new("Child"))],
+            "test",
+        );
+        lines.push(Line::utterance(Utterance::new(main)));
+        lines.push(crate::converters::build::header(Header::End));
+        ChatFile::new(lines)
     }
 
     #[test]

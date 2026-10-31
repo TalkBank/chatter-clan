@@ -1,13 +1,12 @@
 use super::*;
-use talkbank_model::Span;
-use talkbank_model::{Line, MainTier, Terminator, UtteranceContent, Word};
+use talkbank_model::{Line, UtteranceContent};
 
 fn make_utterance(speaker: &str, words: &[&str]) -> Utterance {
     let content: Vec<UtteranceContent> = words
         .iter()
-        .map(|w| UtteranceContent::Word(Box::new(Word::simple(*w))))
+        .map(|w| UtteranceContent::Word(Box::new(crate::test_support::word(*w))))
         .collect();
-    let main = MainTier::new(speaker, content, Terminator::Period { span: Span::DUMMY });
+    let main = crate::test_support::main_tier(speaker, content);
     Utterance::new(main)
 }
 

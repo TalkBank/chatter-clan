@@ -10,9 +10,9 @@ Finds the longest words used by each speaker, reporting a ranked table of unique
 ## Usage
 
 ```bash
-chatter clan maxwd file.cha
-chatter clan maxwd --speaker CHI file.cha
-chatter clan maxwd --limit 50 file.cha
+chatter-clan maxwd file.cha
+chatter-clan maxwd --speaker CHI file.cha
+chatter-clan maxwd --limit 50 file.cha
 ```
 
 ## Options (chatter-native)
@@ -68,7 +68,7 @@ against chatter's coverage. Sources:
 | `+u` | Combine across files | (default) | Done | |
 | `+re` | Recurse | (default) | Done | |
 | `+k` | Case-sensitive | `--case-sensitive` | Done | Landed 2026-05-23. Reads `CommonAnalysisArgs::case_sensitive`. `process_utterance` picks the key derivation: default uses `NormalizedWord::from_word` (lowercased), `+k` uses `NormalizedWord(cleaned_text().to_owned())` (case-preserving) so case variants count as distinct words for the unique-length and exclude-length filters. Pinned by `maxwd_case_sensitive_splits_case_variants` and `maxwd_default_collapses_case_variants`. |
-| `+wN` / `-wN` | Context window (KWAL/COMBO keyword-context) | -- | Rewriter only | Inapplicable to MAXWD (a per-speaker longest-words list, no per-match context to surround). The rewriter maps `+wN`/`-wN` to `--context-after`/`--context-before`, but MAXWD has no such clap field, so it errors at parse time, the correct outcome for an inapplicable flag (talkbank-clan/CLAUDE.md). CLAN's binary instead empties the output (a context-machinery artifact). |
+| `+wN` / `-wN` | Context window (KWAL/COMBO keyword-context) | -- | Rewriter only | Inapplicable to MAXWD (a per-speaker longest-words list, no per-match context to surround). The rewriter maps `+wN`/`-wN` to `--context-after`/`--context-before`, but MAXWD has no such clap field, so it errors at parse time, the correct outcome for an inapplicable flag (talkbank-clan/AGENTS.md). CLAN's binary instead empties the output (a context-machinery artifact). |
 | `+f` / `+fEXT` | Output to file | `--output-ext` (rewriter target) | Rewriter only | |
 
 ### Audit summary
@@ -112,7 +112,7 @@ under Phase 1.7.
 2. `+d1` "legal chat format" suggests the output is itself a CHAT
    file. That's a transform-flavoured output, not analyze. The
    chatter approach might be to route `--display-mode 1` to an
-   explicit `chatter clan maxwd-extract` transform rather than
+   explicit `chatter-clan maxwd-extract` transform rather than
    overloading the analyze command.
 
 ## Output

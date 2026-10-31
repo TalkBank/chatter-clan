@@ -10,8 +10,8 @@ Renames speaker codes throughout a CHAT file: in `@Participants`, `@ID` headers,
 ## Usage
 
 ```bash
-chatter clan roles --rename "EXP=INV" file.cha
-chatter clan roles --rename "Child=CHI" --rename "Mother=MOT" file.cha
+chatter-clan roles --rename "EXP=INV" file.cha
+chatter-clan roles --rename "Child=CHI" --rename "Mother=MOT" file.cha
 ```
 
 ## Options

@@ -14,10 +14,10 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#DSS_Command) 
 ## Usage
 
 ```bash
-chatter clan dss --speaker CHI file.cha
-chatter clan dss --rules english.scr file.cha
-chatter clan dss --max-utterances 100 file.cha
-chatter clan dss --format json file.cha
+chatter-clan dss --speaker CHI file.cha
+chatter-clan dss --rules english.scr file.cha
+chatter-clan dss --max-utterances 100 file.cha
+chatter-clan dss --format json file.cha
 ```
 
 ## Options (chatter-native)

@@ -287,13 +287,12 @@ fn load_search_expr_file_keeps_expression_lines_intact() {
 
 /// Build a minimal Utterance with the given words for filter testing.
 fn make_test_utterance(words: &[&str]) -> talkbank_model::Utterance {
-    use talkbank_model::Span;
-    use talkbank_model::{MainTier, Terminator, UtteranceContent, Word};
+    use talkbank_model::UtteranceContent;
 
     let content: Vec<UtteranceContent> = words
         .iter()
-        .map(|w| UtteranceContent::Word(Box::new(Word::simple(*w))))
+        .map(|w| UtteranceContent::Word(Box::new(crate::test_support::word(*w))))
         .collect();
-    let main = MainTier::new("CHI", content, Terminator::Period { span: Span::DUMMY });
+    let main = crate::test_support::main_tier("CHI", content);
     talkbank_model::Utterance::new(main)
 }

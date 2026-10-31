@@ -1,6 +1,7 @@
 //! Builder that turns raw analysis options into typed service requests.
 
 use crate::commands::chains::ChainsConfig;
+use crate::commands::chip::{ChipConfig, SpeakerCode};
 use crate::commands::codes::CodesConfig;
 use crate::commands::combo::{ComboConfig, SearchExpr};
 use crate::commands::cooccur::CooccurConfig;
@@ -73,6 +74,7 @@ impl AnalysisRequestBuilder {
             }
             AnalysisOptions::Mlu(o) => {
                 Ok(AnalysisPlan::Service(AnalysisRequest::Mlu(MluConfig {
+                    output_mode: o.output_mode,
                     words_only: o.words,
                     solo_word_exclusions: o.solo_word_exclusions,
                     combine_speakers: o.combine_speakers,
@@ -167,7 +169,64 @@ impl AnalysisRequestBuilder {
                     case_sensitive: o.case_sensitive,
                 })))
             }
-            AnalysisOptions::Chip => Ok(AnalysisPlan::Service(AnalysisRequest::Chip)),
+            AnalysisOptions::Chip(o) => {
+                let mut config = ChipConfig::default()
+                    .with_case_mode(o.case_mode)
+                    .with_exclusion_patterns(o.exclusion_patterns)
+                    .map_err(|error| AnalysisServiceError::InvalidRequest(error.to_string()))?;
+                for code in o.adults {
+                    config = config
+                        .with_adult(SpeakerCode::parse(&code).map_err(|error| {
+                            AnalysisServiceError::InvalidRequest(error.to_string())
+                        })?)
+                        .map_err(|error| AnalysisServiceError::InvalidRequest(error.to_string()))?;
+                }
+                for code in o.children {
+                    config = config
+                        .with_child(SpeakerCode::parse(&code).map_err(|error| {
+                            AnalysisServiceError::InvalidRequest(error.to_string())
+                        })?)
+                        .map_err(|error| AnalysisServiceError::InvalidRequest(error.to_string()))?;
+                }
+                if let Some(window) = o.window {
+                    config = config
+                        .with_window(window)
+                        .map_err(|error| AnalysisServiceError::InvalidRequest(error.to_string()))?;
+                }
+                config = config.with_min_words(o.min_words.unwrap_or_default());
+                if let Some(min_index) = o.min_index {
+                    config = config
+                        .with_min_index(min_index)
+                        .map_err(|error| AnalysisServiceError::InvalidRequest(error.to_string()))?;
+                }
+                if o.main_tier {
+                    config = config
+                        .with_main_tier()
+                        .map_err(|error| AnalysisServiceError::InvalidRequest(error.to_string()))?;
+                }
+                if o.substitution {
+                    config = config
+                        .with_substitution()
+                        .map_err(|error| AnalysisServiceError::InvalidRequest(error.to_string()))?;
+                }
+                for value in o.disabled_scoring {
+                    let mut letters = value.chars();
+                    let Some(letter) = letters.next() else {
+                        return Err(AnalysisServiceError::InvalidRequest(
+                            "CHIP scoring option requires one of b, c, or s".to_owned(),
+                        ));
+                    };
+                    if letters.next().is_some() {
+                        return Err(AnalysisServiceError::InvalidRequest(
+                            "CHIP scoring option requires one of b, c, or s".to_owned(),
+                        ));
+                    }
+                    config = config
+                        .without_scoring(letter)
+                        .map_err(|error| AnalysisServiceError::InvalidRequest(error.to_string()))?;
+                }
+                Ok(AnalysisPlan::Service(AnalysisRequest::Chip(config)))
+            }
             AnalysisOptions::Phonfreq => Ok(AnalysisPlan::Service(AnalysisRequest::Phonfreq)),
             AnalysisOptions::Modrep => Ok(AnalysisPlan::Service(AnalysisRequest::Modrep)),
             AnalysisOptions::Vocd(o) => {

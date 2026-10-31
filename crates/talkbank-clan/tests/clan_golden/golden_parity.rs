@@ -130,8 +130,16 @@ fn render_chatter_output(case: &GoldenCase) -> String {
             extra_fixtures,
         } => {
             let mut files = vec![crate::harness::corpus_file(case.fixture)];
-            files.extend(extra_fixtures.iter().map(|f| crate::harness::corpus_file(f)));
-            crate::harness::run_rust_spreadsheet(&files, *mode, crate::harness::build_filter(case.filter))
+            files.extend(
+                extra_fixtures
+                    .iter()
+                    .map(|f| crate::harness::corpus_file(f)),
+            );
+            crate::harness::run_rust_spreadsheet(
+                &files,
+                *mode,
+                crate::harness::build_filter(case.filter),
+            )
         }
     }
 }
@@ -184,8 +192,8 @@ pub(crate) fn seed_clan_golden(case: &GoldenCase) {
     let file = crate::harness::corpus_file(case.fixture);
     // `run_clan` already strips the volatile CLAN banner (timestamp, version
     // date, "From pipe input"); the golden is the stable analysis body.
-    let clan_output = crate::harness::run_clan(case.command, &file, case.clan_args)
-        .unwrap_or_else(|| {
+    let clan_output =
+        crate::harness::run_clan(case.command, &file, case.clan_args).unwrap_or_else(|| {
             panic!(
                 "cannot seed golden for {} {:?}: CLAN binary unavailable or failed. \
                  Set CLAN_BIN_DIR to the private CLAN build.",
@@ -266,10 +274,20 @@ macro_rules! golden_case {
 // divergence surfaces as a RED here, to be fixed in chatter (CLAN golden is
 // authoritative) or reclassified as a documented divergence after adjudication.
 const FREQ_BARE_ENG: GoldenCase = freq_eng_case!("bare_eng", &[], &[], FilterSpec::None, "(bare)");
-const FREQ_D1_ENG: GoldenCase =
-    freq_eng_case!("d1_eng", &["+d1"], &["--word-list-only"], FilterSpec::None, "+d1");
-const FREQ_D4_ENG: GoldenCase =
-    freq_eng_case!("d4_eng", &["+d4"], &["--types-tokens-only"], FilterSpec::None, "+d4");
+const FREQ_D1_ENG: GoldenCase = freq_eng_case!(
+    "d1_eng",
+    &["+d1"],
+    &["--word-list-only"],
+    FilterSpec::None,
+    "+d1"
+);
+const FREQ_D4_ENG: GoldenCase = freq_eng_case!(
+    "d4_eng",
+    &["+d4"],
+    &["--types-tokens-only"],
+    FilterSpec::None,
+    "+d4"
+);
 const FREQ_C_ENG: GoldenCase = freq_eng_case!(
     "c_eng",
     &["+c"],
@@ -277,8 +295,13 @@ const FREQ_C_ENG: GoldenCase = freq_eng_case!(
     FilterSpec::None,
     "+c / +c0"
 );
-const FREQ_O1_ENG: GoldenCase =
-    freq_eng_case!("o1_eng", &["+o1"], &["--sort", "reverse-concordance"], FilterSpec::None, "+o1");
+const FREQ_O1_ENG: GoldenCase = freq_eng_case!(
+    "o1_eng",
+    &["+o1"],
+    &["--sort", "reverse-concordance"],
+    FilterSpec::None,
+    "+o1"
+);
 // CLAN `+o3` (isCombineSpeakers, freq.cpp:832): pool ALL speakers into one
 // frequency table, no per-speaker `Speaker:` header, summed counts, combined
 // Types/Tokens/TTR. On eng-conversation (`*SPE` + `*GES`), `the` = 4 (2+2),
@@ -292,7 +315,7 @@ const FREQ_O3_COMBINE_ENG: GoldenCase = freq_eng_case!(
     "+o3"
 );
 const FREQ_K_ENG: GoldenCase =
-    freq_eng_case!("k_eng", &["+k"], &["--case-sensitive"], FilterSpec::None, "+k");
+    freq_eng_case!("k_eng", &["+k"], &["--plus-k"], FilterSpec::None, "+k");
 // `+t*SPE` selects only the SPE speaker (CLAN `+t*SPE`); the chatter side gets
 // the equivalent speaker-include filter (FREQ selection flows through the
 // filter, not `rust_args`).
@@ -358,7 +381,12 @@ const FREQ_S_MULTIWORD_ENG: GoldenCase = freq_eng_case!(
 const FREQ_C3_ANYORDER_ENG: GoldenCase = freq_eng_case!(
     "c3_anyorder_eng",
     &["+c3", "+sgoing Triangle", "+t*SPE"],
-    &["--multiword-order", "any", "--include-word", "going Triangle"],
+    &[
+        "--multiword-order",
+        "any",
+        "--include-word",
+        "going Triangle"
+    ],
     FilterSpec::SpeakerInclude(&["SPE"]),
     "+c3"
 );
@@ -369,7 +397,12 @@ const FREQ_C3_ANYORDER_ENG: GoldenCase = freq_eng_case!(
 const FREQ_C4_SOLE_ENG: GoldenCase = freq_eng_case!(
     "c4_sole_eng",
     &["+c4", "+sTriangle kept going", "+t*SPE"],
-    &["--multiword-scope", "sole", "--include-word", "Triangle kept going"],
+    &[
+        "--multiword-scope",
+        "sole",
+        "--include-word",
+        "Triangle kept going"
+    ],
     FilterSpec::SpeakerInclude(&["SPE"]),
     "+c4"
 );
@@ -853,8 +886,15 @@ const FREQ_GOLDEN_CASES: &[&GoldenCase] = &[
 // CLAN-format render already byte-matches CLAN per the parity categorization
 // audit, now enforced fail-closed. The 19 diverging commands stay as
 // per-command parity work.
-const MLT_MOR_GRA: GoldenCase =
-    golden_case!("mlt", "tiers/mor-gra.cha", "mlt_mor_gra", &[], &[], FilterSpec::None, "(bare)");
+const MLT_MOR_GRA: GoldenCase = golden_case!(
+    "mlt",
+    "tiers/mor-gra.cha",
+    "mlt_mor_gra",
+    &[],
+    &[],
+    FilterSpec::None,
+    "(bare)"
+);
 const DIST_MOR_GRA: GoldenCase = golden_case!(
     "dist",
     "tiers/mor-gra.cha",
@@ -930,8 +970,15 @@ const MIGRATED_GOLDEN_CASES: &[&GoldenCase] = &[
 // CLAN-format render as DIVERGE, so the bare golden below is expected to start
 // RED against CLAN; chatter is then driven to byte parity (CLAN is
 // authoritative). Each additional MLU flag becomes a further case here.
-const MLU_MOR_GRA: GoldenCase =
-    golden_case!("mlu", "tiers/mor-gra.cha", "mlu_mor_gra", &[], &[], FilterSpec::None, "(bare)");
+const MLU_MOR_GRA: GoldenCase = golden_case!(
+    "mlu",
+    "tiers/mor-gra.cha",
+    "mlu_mor_gra",
+    &[],
+    &[],
+    FilterSpec::None,
+    "(bare)"
+);
 // CLAN MLU `+o3` (mlu_isCombineSpeakers, mlu.cpp:721): pool every selected
 // speaker into one `*COMBINED*` result. On mor-gra.cha, CHI (utt 1, morph 6) +
 // MOT (utt 1, morph 5) combine to utt 2 / morph 11 / ratio 5.500 / SD 0.500.

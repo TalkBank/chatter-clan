@@ -12,9 +12,9 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409240
 ## Usage
 
 ```bash
-chatter clan timedur file.cha
-chatter clan timedur --speaker CHI file.cha
-chatter clan timedur --format json file.cha
+chatter-clan timedur file.cha
+chatter-clan timedur --speaker CHI file.cha
+chatter-clan timedur --format json file.cha
 ```
 
 ## Options (chatter-native)

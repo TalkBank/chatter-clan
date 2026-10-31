@@ -8,10 +8,10 @@ Character-length histogram for word stems from the `%mor` tier.
 ## Usage
 
 ```bash
-chatter clan wdsize file.cha
-chatter clan wdsize corpus/ --speaker CHI
-chatter clan wdsize file.cha --main-tier    # Use main tier words instead
-chatter clan wdsize file.cha --format json
+chatter-clan wdsize file.cha
+chatter-clan wdsize corpus/ --speaker CHI
+chatter-clan wdsize file.cha --main-tier    # Use main tier words instead
+chatter-clan wdsize file.cha --format json
 ```
 
 ## What It Measures

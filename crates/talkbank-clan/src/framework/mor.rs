@@ -54,7 +54,7 @@ pub struct MorPosCount {
 /// Returns a reference to the `MorTier` if present and non-empty, or `None`.
 pub fn extract_mor_tier(utterance: &Utterance) -> Option<&MorTier> {
     for dep in &utterance.dependent_tiers {
-        if let DependentTier::Mor(tier) = dep {
+        if let DependentTier::Mor(tier) = &dep.tier {
             if !tier.items().is_empty() {
                 return Some(tier);
             }
@@ -274,8 +274,8 @@ pub fn any_item_has_pos(items: &[Mor], pos_prefix: &str) -> bool {
 /// in eval.rs, kideval.rs, dss.rs, and ipsyn.rs.
 pub fn extract_mor_text(utterance: &Utterance) -> Option<String> {
     for dep in &utterance.dependent_tiers {
-        if let DependentTier::Mor(_) = dep {
-            let content = dependent_tier_content_text(dep);
+        if let DependentTier::Mor(_) = &dep.tier {
+            let content = dependent_tier_content_text(&dep.tier);
             if !content.is_empty() {
                 return Some(content);
             }
@@ -358,11 +358,12 @@ mod tests {
 
     #[test]
     fn extract_mor_text_returns_none_when_absent() {
-        use talkbank_model::Span;
-        use talkbank_model::{MainTier, Terminator, UtteranceContent, Word};
+        use talkbank_model::UtteranceContent;
 
-        let content = vec![UtteranceContent::Word(Box::new(Word::simple("hello")))];
-        let main = MainTier::new("CHI", content, Terminator::Period { span: Span::DUMMY });
+        let content = vec![UtteranceContent::Word(Box::new(crate::test_support::word(
+            "hello",
+        )))];
+        let main = crate::test_support::main_tier("CHI", content);
         let utt = Utterance::new(main);
         assert!(extract_mor_text(&utt).is_none());
     }

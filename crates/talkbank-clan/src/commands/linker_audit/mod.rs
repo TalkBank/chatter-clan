@@ -24,7 +24,7 @@ mod output;
 use std::collections::HashMap;
 use std::fmt;
 
-use talkbank_model::model::{Linker, Terminator};
+use talkbank_model::model::{Linker, LinkerKind, Terminator};
 use talkbank_model::{Line, Utterance};
 
 use crate::framework::{AnalysisCommand, FileContext};
@@ -327,7 +327,7 @@ fn analyze_file(utterances: &[&Utterance], filename: &str) -> FileStats {
     };
 
     let mut last_term_by_speaker: HashMap<&str, TerminatorKind> = HashMap::new();
-    let mut last_linker_by_speaker: HashMap<&str, Option<Linker>> = HashMap::new();
+    let mut last_linker_by_speaker: HashMap<&str, Option<LinkerKind>> = HashMap::new();
 
     let mut prev_speaker: Option<&str> = None;
     let mut prev_terminator: Option<TerminatorKind> = None;
@@ -346,19 +346,19 @@ fn analyze_file(utterances: &[&Utterance], filename: &str) -> FileStats {
         let mut has_lazy_overlap = false;
         let mut has_other_linker = false;
         for linker in linkers {
-            match linker {
-                Linker::LazyOverlapPrecedes => {
+            match linker.kind {
+                LinkerKind::LazyOverlapPrecedes => {
                     stats.linker_lazy_overlap += 1;
                     has_lazy_overlap = true;
                 }
-                Linker::OtherCompletion => stats.linker_other_completion += 1,
-                Linker::QuickUptakeOverlap => stats.linker_quick_uptake += 1,
-                Linker::QuotationFollows => stats.linker_quotation_follows += 1,
-                Linker::SelfCompletion => stats.linker_self_completion += 1,
-                Linker::TcuContinuation => stats.linker_tcu_continuation += 1,
-                Linker::NoBreakTcuContinuation => stats.linker_no_break_tcu += 1,
+                LinkerKind::OtherCompletion => stats.linker_other_completion += 1,
+                LinkerKind::QuickUptakeOverlap => stats.linker_quick_uptake += 1,
+                LinkerKind::QuotationFollows => stats.linker_quotation_follows += 1,
+                LinkerKind::SelfCompletion => stats.linker_self_completion += 1,
+                LinkerKind::TcuContinuation => stats.linker_tcu_continuation += 1,
+                LinkerKind::NoBreakTcuContinuation => stats.linker_no_break_tcu += 1,
             }
-            if !matches!(linker, Linker::LazyOverlapPrecedes) {
+            if !matches!(linker.kind, LinkerKind::LazyOverlapPrecedes) {
                 has_other_linker = true;
             }
         }
@@ -387,7 +387,10 @@ fn analyze_file(utterances: &[&Utterance], filename: &str) -> FileStats {
             }
         }
 
-        if linkers.iter().any(|l| matches!(l, Linker::OtherCompletion)) {
+        if linkers
+            .iter()
+            .any(|l| matches!(l.kind, LinkerKind::OtherCompletion))
+        {
             if idx == 0 {
                 stats.pp_first_utterance += 1;
             } else if let Some(ps) = prev_speaker {
@@ -406,7 +409,10 @@ fn analyze_file(utterances: &[&Utterance], filename: &str) -> FileStats {
             }
         }
 
-        if linkers.iter().any(|l| matches!(l, Linker::SelfCompletion)) {
+        if linkers
+            .iter()
+            .any(|l| matches!(l.kind, LinkerKind::SelfCompletion))
+        {
             match last_term_by_speaker.get(speaker) {
                 None => stats.sc_no_prior += 1,
                 Some(TerminatorKind::Interruption | TerminatorKind::InterruptedQuestion) => {
@@ -418,7 +424,7 @@ fn analyze_file(utterances: &[&Utterance], filename: &str) -> FileStats {
 
         if linkers
             .iter()
-            .any(|l| matches!(l, Linker::QuotationFollows))
+            .any(|l| matches!(l.kind, LinkerKind::QuotationFollows))
         {
             stats.quot_follows_links += 1;
             match last_term_by_speaker.get(speaker) {
@@ -428,7 +434,7 @@ fn analyze_file(utterances: &[&Utterance], filename: &str) -> FileStats {
                     if last_linker_by_speaker
                         .get(speaker)
                         .and_then(|l| l.as_ref())
-                        .is_some_and(|l| matches!(l, Linker::QuotationFollows))
+                        .is_some_and(|l| matches!(l, LinkerKind::QuotationFollows))
                     {
                         stats.qf_chained += 1;
                     } else {
@@ -470,7 +476,7 @@ fn analyze_file(utterances: &[&Utterance], filename: &str) -> FileStats {
 
         if linkers
             .iter()
-            .any(|l| matches!(l, Linker::QuickUptakeOverlap))
+            .any(|l| matches!(l.kind, LinkerKind::QuickUptakeOverlap))
         {
             if prev_speaker.is_some_and(|ps| ps == speaker) {
                 stats.qu_same_speaker += 1;
@@ -479,7 +485,10 @@ fn analyze_file(utterances: &[&Utterance], filename: &str) -> FileStats {
             }
         }
 
-        if linkers.iter().any(|l| matches!(l, Linker::TcuContinuation)) {
+        if linkers
+            .iter()
+            .any(|l| matches!(l.kind, LinkerKind::TcuContinuation))
+        {
             if prev_speaker.is_some_and(|ps| ps == speaker) {
                 stats.tcu_tech_same_speaker += 1;
             } else {
@@ -488,7 +497,7 @@ fn analyze_file(utterances: &[&Utterance], filename: &str) -> FileStats {
         }
         if linkers
             .iter()
-            .any(|l| matches!(l, Linker::NoBreakTcuContinuation))
+            .any(|l| matches!(l.kind, LinkerKind::NoBreakTcuContinuation))
         {
             if prev_speaker.is_some_and(|ps| ps == speaker) {
                 stats.tcu_nb_same_speaker += 1;
@@ -509,16 +518,20 @@ fn analyze_file(utterances: &[&Utterance], filename: &str) -> FileStats {
             if matches!(
                 pt,
                 TerminatorKind::TrailingOff | TerminatorKind::TrailingOffQuestion
-            ) && linkers
-                .iter()
-                .any(|l| matches!(l, Linker::OtherCompletion | Linker::SelfCompletion))
-            {
+            ) && linkers.iter().any(|l| {
+                matches!(
+                    l.kind,
+                    LinkerKind::OtherCompletion | LinkerKind::SelfCompletion
+                )
+            }) {
                 stats.trailing_off_followed += 1;
             }
             if matches!(
                 pt,
                 TerminatorKind::Interruption | TerminatorKind::InterruptedQuestion
-            ) && linkers.iter().any(|l| matches!(l, Linker::SelfCompletion))
+            ) && linkers
+                .iter()
+                .any(|l| matches!(l.kind, LinkerKind::SelfCompletion))
             {
                 stats.interruption_followed += 1;
             }
@@ -532,8 +545,8 @@ fn analyze_file(utterances: &[&Utterance], filename: &str) -> FileStats {
         }
         let primary_linker = linkers
             .iter()
-            .find(|l| !matches!(l, Linker::LazyOverlapPrecedes))
-            .cloned();
+            .map(|l| l.kind)
+            .find(|k| !matches!(k, LinkerKind::LazyOverlapPrecedes));
         last_linker_by_speaker.insert(speaker, primary_linker);
     }
 

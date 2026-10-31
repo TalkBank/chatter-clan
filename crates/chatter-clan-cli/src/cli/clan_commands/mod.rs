@@ -202,6 +202,18 @@ pub enum ClanCommands {
         #[arg(long = "combine-speakers")]
         combine_speakers: bool,
 
+        /// Emit CLAN `+d1` tab-separated rows with the speaker's `@ID` fields.
+        #[arg(long = "id-rows", overrides_with = "spreadsheet")]
+        id_rows: bool,
+
+        /// Emit CLAN `+d` SpreadsheetML output.
+        #[arg(long, overrides_with = "id_rows")]
+        spreadsheet: bool,
+
+        /// Combine CLAN `+d1` rows across input files (CLAN `+u`).
+        #[arg(long = "combine-files")]
+        combine_files: bool,
+
         /// Re-admit utterances containing `xxx` (unintelligible) to the count,
         /// which MLU excludes by default (CLAN `+sxxx`). The `xxx` marker itself
         /// still contributes no morpheme.
@@ -447,6 +459,42 @@ pub enum ClanCommands {
         /// Path to CHAT file(s) or directory
         path: Vec<PathBuf>,
 
+        /// Adult speaker code(s) (`+b`).
+        #[arg(long = "adult", value_name = "CODE")]
+        adults: Vec<String>,
+
+        /// Child speaker code(s) (`+c`).
+        #[arg(long = "child", value_name = "CODE")]
+        children: Vec<String>,
+
+        /// Allow same-part-of-speech substitutions (`+g`).
+        #[arg(long = "substitution")]
+        substitution: bool,
+
+        /// Read main-tier words instead of `%mor` (`-t%mor`).
+        #[arg(long = "main-tier")]
+        main_tier: bool,
+
+        /// Utterance window (`+qN`, 2-7).
+        #[arg(long = "window", value_name = "N")]
+        window: Option<u8>,
+
+        /// Minimum source words (`+wN`).
+        #[arg(long = "min-words", value_name = "N")]
+        min_words: Option<usize>,
+
+        /// Minimum repetition index (`+xN`).
+        #[arg(long = "min-index", value_name = "N")]
+        min_index: Option<f64>,
+
+        /// Exclude words matching patterns in this file (`-hFILE`).
+        #[arg(long = "exclusion-list", value_name = "FILE")]
+        exclusion_list: Option<PathBuf>,
+
+        /// Disable one scoring column group: adult, child, or self (`-nb/c/s`).
+        #[arg(long = "disable-scoring", value_name = "COLUMN", value_parser = ["b", "c", "s"])]
+        disabled_scoring: Vec<String>,
+
         #[command(flatten)]
         common: CommonAnalysisArgs,
     },
@@ -551,7 +599,7 @@ pub enum ClanCommands {
         /// CLAN's `+l` refusal. Left as `Option` here so the missing-
         /// flag case can emit CLAN's exact error message instead of
         /// clap's default `required` complaint.
-        #[arg(short = 'f', long)]
+        #[arg(long)]
         script: Option<PathBuf>,
 
         #[command(flatten)]

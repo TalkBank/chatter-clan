@@ -33,7 +33,7 @@ pipeline.
 
 ## Behavior
 
-Invoking `chatter clan mor` prints an error directing users to
+Invoking `chatter-clan mor` prints an error directing users to
 batchalign and exits with a non-zero status. No CHAT files are
 modified.
 

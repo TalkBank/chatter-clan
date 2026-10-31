@@ -18,7 +18,7 @@
 
 use talkbank_model::{BracketedItem, ChatFile, Line, UtteranceContent, Word};
 
-use crate::framework::{TransformCommand, TransformError};
+use crate::framework::{TransformCommand, TransformError, replace_word_text};
 
 /// LOWCASE transform: lowercase all words on main tiers.
 pub struct LowcaseCommand;
@@ -28,9 +28,9 @@ impl TransformCommand for LowcaseCommand {
 
     /// Lowercase all main-tier word surfaces while preserving structure.
     fn transform(&self, file: &mut ChatFile) -> Result<(), TransformError> {
-        for line in file.lines.iter_mut() {
+        for line in file.lines.as_mut_slice().iter_mut() {
             if let Line::Utterance(utterance) = line {
-                lowercase_content(&mut utterance.main.content.content);
+                lowercase_content(utterance.main.content.content.as_mut_slice())?;
             }
         }
         Ok(())
@@ -38,68 +38,71 @@ impl TransformCommand for LowcaseCommand {
 }
 
 /// Lowercase all words in utterance content items.
-fn lowercase_content(items: &mut [UtteranceContent]) {
+fn lowercase_content(items: &mut [UtteranceContent]) -> Result<(), TransformError> {
     for item in items.iter_mut() {
         match item {
             UtteranceContent::Word(word) => {
-                lowercase_word(word);
+                lowercase_word(word)?;
             }
             UtteranceContent::AnnotatedWord(annotated) => {
-                lowercase_word(&mut annotated.inner);
+                lowercase_word(&mut annotated.inner)?;
             }
             UtteranceContent::ReplacedWord(replaced) => {
-                lowercase_word(&mut replaced.word);
-                for rep in replaced.replacement.words.iter_mut() {
-                    lowercase_word(rep);
+                lowercase_word(&mut replaced.word)?;
+                for rep in replaced.replacement.words.as_mut_slice().iter_mut() {
+                    lowercase_word(rep)?;
                 }
             }
             UtteranceContent::Group(group) => {
-                lowercase_bracketed_items(&mut group.content.content);
+                lowercase_bracketed_items(group.content.content.as_mut_slice())?;
             }
             UtteranceContent::AnnotatedGroup(annotated) => {
-                lowercase_bracketed_items(&mut annotated.inner.content.content);
+                lowercase_bracketed_items(annotated.inner.content.content.as_mut_slice())?;
             }
             _ => {}
         }
     }
+    Ok(())
 }
 
 /// Lowercase a single word's raw_text (which drives serialization).
 ///
 /// The English first-person pronoun "I" is preserved as uppercase, matching
 /// CLAN's behavior.
-fn lowercase_word(word: &mut Word) {
+fn lowercase_word(word: &mut Word) -> Result<(), TransformError> {
     // Preserve the pronoun "I", CLAN keeps it uppercase.
     if word.cleaned_text() == "I" {
-        return;
+        return Ok(());
     }
     let raw = word.raw_text().to_owned();
     let lowered = raw.to_lowercase();
     if lowered != raw {
-        word.replace_simple_text(lowered);
+        replace_word_text(word, &lowered)?;
     }
+    Ok(())
 }
 
 /// Lowercase words inside bracketed items (groups).
-fn lowercase_bracketed_items(items: &mut [BracketedItem]) {
+fn lowercase_bracketed_items(items: &mut [BracketedItem]) -> Result<(), TransformError> {
     for item in items.iter_mut() {
         match item {
             BracketedItem::Word(word) => {
-                lowercase_word(word);
+                lowercase_word(word)?;
             }
             BracketedItem::AnnotatedWord(annotated) => {
-                lowercase_word(&mut annotated.inner);
+                lowercase_word(&mut annotated.inner)?;
             }
             BracketedItem::ReplacedWord(replaced) => {
-                lowercase_word(&mut replaced.word);
-                for rep in replaced.replacement.words.iter_mut() {
-                    lowercase_word(rep);
+                lowercase_word(&mut replaced.word)?;
+                for rep in replaced.replacement.words.as_mut_slice().iter_mut() {
+                    lowercase_word(rep)?;
                 }
             }
             BracketedItem::AnnotatedGroup(annotated) => {
-                lowercase_bracketed_items(&mut annotated.inner.content.content);
+                lowercase_bracketed_items(annotated.inner.content.content.as_mut_slice())?;
             }
             _ => {}
         }
     }
+    Ok(())
 }

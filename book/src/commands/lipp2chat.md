@@ -10,7 +10,7 @@ Converts LIPP (Logical International Phonetics Programs) phonetic profile data i
 ## Usage
 
 ```bash
-chatter clan lipp2chat input.lipp
+chatter-clan lipp2chat input.lipp
 ```
 
 ## Options

@@ -3,7 +3,7 @@
 **Status:** Current
 **Last updated:** 2026-05-12 04:20 EDT
 
-Complete mapping between legacy CLAN `+flag`/`-flag` syntax and modern `--flag` equivalents. Both styles are accepted by `chatter clan`. Translation lives in `crates/talkbank-clan/src/clan_args.rs`.
+Complete mapping between legacy CLAN `+flag`/`-flag` syntax and modern `--flag` equivalents. Both styles are accepted by `chatter-clan`. Translation lives in `crates/talkbank-clan/src/clan_args.rs`.
 
 ## Speaker and tier filters
 
@@ -21,7 +21,7 @@ Complete mapping between legacy CLAN `+flag`/`-flag` syntax and modern `--flag` 
 |------|--------|-------------|
 | `+s<word>` | `--include-word <word>` | Include word |
 | `-s<word>` | `--exclude-word <word>` | Exclude word |
-| `+k` | `--case-sensitive` | Case-sensitive matching |
+| `+k` | `--plus-k` (`--case-sensitive` alias) | Toggle command-specific case handling |
 
 ## Gem and range
 

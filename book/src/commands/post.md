@@ -22,7 +22,7 @@ time, so a separate post-pass is not needed.
 
 ## Behavior
 
-Invoking `chatter clan post` prints an error and exits non-zero. No
+Invoking `chatter-clan post` prints an error and exits non-zero. No
 CHAT files are modified.
 
 ## See also

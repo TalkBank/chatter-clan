@@ -12,8 +12,8 @@ When tiers have different lengths for a given utterance, missing positions are r
 ## Usage
 
 ```bash
-chatter clan trnfix file.cha
-chatter clan trnfix file.cha --tier1 mor --tier2 gra
+chatter-clan trnfix file.cha
+chatter-clan trnfix file.cha --tier1 mor --tier2 gra
 ```
 
 ## Options (chatter-native)

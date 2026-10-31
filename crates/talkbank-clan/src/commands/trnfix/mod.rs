@@ -82,7 +82,7 @@ impl TrnfixCommand {
 /// `%trn` aliases `%mor` and `%grt` aliases `%gra`.
 fn extract_tier_tokens(utterance: &Utterance, label: &str) -> Option<Vec<String>> {
     for dep in &utterance.dependent_tiers {
-        let matches = match dep {
+        let matches = match &dep.tier {
             DependentTier::Mor(_) if matches!(label, "mor" | "trn") => true,
             DependentTier::Gra(_) if matches!(label, "gra" | "grt") => true,
             DependentTier::Pho(_) if label == "pho" => true,
@@ -91,10 +91,10 @@ fn extract_tier_tokens(utterance: &Utterance, label: &str) -> Option<Vec<String>
             _ => false,
         };
         if matches {
-            return Some(match dep {
+            return Some(match &dep.tier {
                 DependentTier::Mor(tier) => mor_item_texts(tier),
                 DependentTier::Gra(tier) => gra_relation_texts(tier),
-                _ => dependent_tier_content_text(dep)
+                _ => dependent_tier_content_text(&dep.tier)
                     .split_whitespace()
                     .map(ToOwned::to_owned)
                     .collect(),

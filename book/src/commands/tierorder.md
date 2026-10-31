@@ -12,7 +12,7 @@ Reorders dependent tiers into a consistent order. The legacy manual describes `T
 ## Usage
 
 ```bash
-chatter clan tierorder file.cha
+chatter-clan tierorder file.cha
 ```
 
 ## Options

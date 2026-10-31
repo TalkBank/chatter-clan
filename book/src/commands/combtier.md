@@ -14,7 +14,7 @@ This is useful for cleaning up files where duplicate tiers were introduced durin
 ## Usage
 
 ```bash
-chatter clan combtier --tier com file.cha
+chatter-clan combtier --tier com file.cha
 ```
 
 ## Options

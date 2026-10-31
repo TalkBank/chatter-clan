@@ -12,7 +12,7 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409318
 ## Usage
 
 ```bash
-chatter clan retrace file.cha
+chatter-clan retrace file.cha
 ```
 
 ## Options

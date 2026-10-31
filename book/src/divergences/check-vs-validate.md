@@ -5,7 +5,7 @@
 
 The `chatter` CLI has two validation tools with different purposes:
 
-| | `chatter clan check` | `chatter validate` |
+| | `chatter-clan check` | `chatter validate` |
 |---|---|---|
 | **Purpose** | CLAN CHECK compatibility | Modern validation workflow |
 | **Audience** | Users migrating from CLAN | Day-to-day development |
@@ -30,13 +30,13 @@ Both tools run the same underlying `parse_and_validate_streaming` pipeline from 
                                │
               ┌────────────────┼────────────────┐
               ▼                                 ▼
-   chatter clan check                  chatter validate
+   chatter-clan check                  chatter validate
    (CLAN-compatible output)            (modern diagnostics)
 ```
 
 ## When to Use Which
 
-### Use `chatter clan check` when:
+### Use `chatter-clan check` when:
 
 - **Migrating from CLAN**: You have scripts that parse CHECK output format
 - **Error filtering**: You need CHECK's `+eN`/`-eN` to filter by error number
@@ -55,7 +55,7 @@ Both tools run the same underlying `parse_and_validate_streaming` pipeline from 
 
 The same error looks different in each tool. For a file declaring `MOT` in `@Participants:` but with no matching `@ID:` line:
 
-**`chatter clan check sample.cha`**:
+**`chatter-clan check sample.cha`**:
 ```text
 *** File "sample.cha": line 4.
 @Participants:	CHI Target_Child, MOT Mother
@@ -79,7 +79,7 @@ Same underlying check (`E522` on the typed side ↔ CHECK number `60` on the leg
 
 ## Additional Checks in CHECK
 
-`chatter clan check` supports a few checks not available in `chatter validate`:
+`chatter-clan check` supports a few checks not available in `chatter validate`:
 
 | Check | Flag | Description |
 |-------|------|-------------|
@@ -112,5 +112,5 @@ rather than caching a stale number in this doc. Variants without a CHECK
 equivalent fall through to `0`; those errors render as `[<code>]` in
 CHECK output instead of `(<n>)`.
 
-Use `chatter clan check +e` to see all 161 CHECK error messages (the
+Use `chatter-clan check +e` to see all 161 CHECK error messages (the
 canonical strings from CLAN's `check_mess()`).

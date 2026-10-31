@@ -145,11 +145,11 @@ mod tests {
 
     fn header_chi() -> IDHeader {
         // Renders as `eng||CHI|||||Target_Child|||`.
-        IDHeader::new("eng", "CHI", "Target_Child")
+        crate::test_support::id_header("eng", "CHI", "Target_Child")
     }
 
     fn header_mot() -> IDHeader {
-        IDHeader::new("eng", "MOT", "Mother")
+        crate::test_support::id_header("eng", "MOT", "Mother")
     }
 
     fn matches(pattern: &str, header: &IDHeader) -> bool {
@@ -211,8 +211,10 @@ mod tests {
     #[test]
     fn multilingual_id_matched_by_glob() {
         let mut multi = header_chi();
-        multi.language =
-            LanguageCodes::new(vec![LanguageCode::from("eng"), LanguageCode::from("yue")]);
+        multi.language = LanguageCodes::new(vec![
+            LanguageCode::new("eng").unwrap(),
+            LanguageCode::new("yue").unwrap(),
+        ]);
         assert!(matches("eng*", &multi));
         assert!(matches("*yue*", &multi));
         assert!(!matches("*fra*", &multi));

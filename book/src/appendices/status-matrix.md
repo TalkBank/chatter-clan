@@ -1,16 +1,19 @@
 # Command Status Matrix
 
-**Status:** Current
-**Last updated:** 2026-06-15 12:23 EDT
+**Status:** Historical coverage snapshot; re-baseline pending
+**Last updated:** 2026-10-31
 
-Status of all CLAN commands in the Rust reimplementation.
+Historical status of CLAN commands in the Rust reimplementation, as audited
+2026-06-15. The coverage counts below have not been refreshed since the
+project resumed in October 2026.
 
 > **Parity authority.** This matrix is a *coverage* cut: which CLAN commands
 > are implemented and which have golden tests. It is **not** a byte-for-byte
 > parity claim. Byte-for-byte CLAN parity is tracked authoritatively in
 > [Parity Status](../parity-status.md), and per that page **no command yet
-> achieves byte-for-byte CLAN parity**. FREQ is the active depth-first command
-> (25/44 flag-rows byte-parity proven as of the last sweep). A row below that
+> achieves byte-for-byte CLAN parity** in that historical snapshot. FREQ was
+> the active depth-first command then (25/44 flag-rows byte-parity proven as
+> of that sweep). A row below that
 > reads "Implemented" with "Golden Tests: Yes" means the command exists and has
 > golden coverage; it does **not** mean its output byte-matches legacy CLAN.
 > Consult [Parity Status](../parity-status.md) for the honest per-command
@@ -55,7 +58,7 @@ signal, see [Parity Status](../parity-status.md).
 | EVAL | Implemented | Yes |
 | EVAL-D | Implemented | Variant of EVAL (DementiaBank norms) |
 | FLUCALC | Implemented | Yes |
-| FREQ | Implemented | Yes (active depth-first parity target; see [Parity Status](../parity-status.md)) |
+| FREQ | Implemented | Yes (active depth-first target in this historical snapshot) |
 | FREQPOS | Implemented | Yes |
 | GEMLIST | Implemented | Yes |
 | IPSYN | Implemented | Yes |

@@ -1,4 +1,4 @@
-//! CLI-argument to domain-type conversions for the `chatter clan` adapters.
+//! CLI-argument to domain-type conversions for CLAN command adapters.
 //!
 //! Each `*_to_*` / `*_arg_to_*` function maps one parsed clap argument
 //! (`crate::cli::*Arg`) onto the corresponding `talkbank_clan` domain enum, plus

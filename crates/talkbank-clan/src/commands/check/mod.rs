@@ -7,15 +7,15 @@
 //!
 //! | CLAN command                | Rust equivalent                              |
 //! |-----------------------------|----------------------------------------------|
-//! | `check file.cha`            | `chatter clan check file.cha`                |
-//! | `check +c0 file.cha`        | `chatter clan check --bullets 0 file.cha`    |
-//! | `check +e file.cha`         | `chatter clan check --list-errors file.cha`  |
-//! | `check +e6 file.cha`        | `chatter clan check --error 6 file.cha`      |
-//! | `check -e6 file.cha`        | `chatter clan check --exclude-error 6 file.cha` |
-//! | `check +g2 file.cha`        | `chatter clan check --check-target file.cha` |
-//! | `check +g4 file.cha`        | `chatter clan check --check-id file.cha`     |
-//! | `check +g5 file.cha`        | `chatter clan check --check-unused file.cha` |
-//! | `check +u file.cha`         | `chatter clan check --check-ud file.cha`     |
+//! | `check file.cha`            | `chatter-clan check file.cha`                |
+//! | `check +c0 file.cha`        | `chatter-clan check --bullets 0 file.cha`    |
+//! | `check +e file.cha`         | `chatter-clan check --list-errors file.cha`  |
+//! | `check +e6 file.cha`        | `chatter-clan check --error 6 file.cha`      |
+//! | `check -e6 file.cha`        | `chatter-clan check --exclude-error 6 file.cha` |
+//! | `check +g2 file.cha`        | `chatter-clan check --check-target file.cha` |
+//! | `check +g4 file.cha`        | `chatter-clan check --check-id file.cha`     |
+//! | `check +g5 file.cha`        | `chatter-clan check --check-unused file.cha` |
+//! | `check +u file.cha`         | `chatter-clan check --check-ud file.cha`     |
 //!
 //! # Differences from CLAN
 //!
@@ -277,11 +277,11 @@ fn convert_errors(content: &str, errors: &[ParseError], config: &CheckConfig) ->
                 return None;
             }
 
-            // Use line from SourceLocation if available, else compute from span
+            // Line from the diagnostic span; 0 when the diagnostic is unlocated
             let line = err
                 .location
-                .line
-                .unwrap_or_else(|| byte_offset_to_line(content, err.location.span.start as usize));
+                .span()
+                .map_or(0, |span| byte_offset_to_line(content, span.start()));
 
             let context = if line > 0 && line <= lines.len() {
                 lines[line - 1].to_string()
@@ -490,10 +490,12 @@ fn check_target_child(file: &ChatFile, config: &CheckConfig, errors: &mut Vec<Ch
         return;
     }
 
-    let has_chi_target = file
-        .participants
-        .iter()
-        .any(|(code, p)| code.as_str() == "CHI" && p.role.as_str() == "Target_Child");
+    let has_chi_target = file.declared_speakers().any(|speaker| {
+        speaker.code().as_str() == "CHI"
+            && speaker
+                .role()
+                .is_some_and(|role| role.as_str() == "Target_Child")
+    });
 
     // Check for @Options: notarget
     let notarget = file.lines.iter().any(|line| {
@@ -502,7 +504,7 @@ fn check_target_child(file: &ChatFile, config: &CheckConfig, errors: &mut Vec<Ch
         {
             return options
                 .iter()
-                .any(|o| matches!(o, ChatOptionFlag::Unsupported(s) if s == "notarget"));
+                .any(|o| matches!(o, ChatOptionFlag::Unsupported(s) if s.as_str() == "notarget"));
         }
         false
     });
@@ -520,7 +522,10 @@ fn check_target_child(file: &ChatFile, config: &CheckConfig, errors: &mut Vec<Ch
 
 /// Check for speakers declared in @Participants but never used (+g5).
 fn check_unused_speakers(file: &ChatFile, config: &CheckConfig, errors: &mut Vec<CheckError>) {
-    let declared: BTreeSet<&str> = file.participants.keys().map(|code| code.as_str()).collect();
+    let declared: BTreeSet<&str> = file
+        .declared_speakers()
+        .map(|speaker| speaker.code().as_str())
+        .collect();
 
     let mut used: BTreeSet<&str> = BTreeSet::new();
     for line in file.lines.iter() {

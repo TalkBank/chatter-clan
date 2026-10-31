@@ -17,8 +17,8 @@ Counts how often each word appears in initial, final, other (middle), or one-wor
 ## Usage
 
 ```bash
-chatter clan freqpos file.cha
-chatter clan freqpos file.cha --speaker CHI
+chatter-clan freqpos file.cha
+chatter-clan freqpos file.cha --speaker CHI
 ```
 
 ## Options (chatter-native)
@@ -73,7 +73,7 @@ analysis tool: just two flags beyond the general inherited set.
 | `+re` | Recurse | (default) | Done | |
 | `+pS` | Word delimiter |, | Missing | |
 | `+k` | Case-sensitive | `--case-sensitive` | Done | Landed 2026-05-23. Reads `CommonAnalysisArgs::case_sensitive`. `process_utterance` picks the key derivation: default uses `NormalizedWord::from_word` (lowercased), `+k` uses `NormalizedWord(cleaned_text().to_owned())` (case-preserving) so `Want`/`want`/`WANT` land in separate by-word entries. Pinned by `freqpos_case_sensitive_splits_case_variants` and `freqpos_default_collapses_case_variants`. |
-| `+wN` / `-wN` | Context window (KWAL/COMBO keyword-context) | -- | Rewriter only | Inapplicable to FREQPOS (positional frequency tables, no per-match context to surround). The rewriter maps `+wN`/`-wN` to `--context-after`/`--context-before`, but FREQPOS has no such clap field, so it errors at parse time, the correct outcome for an inapplicable flag (talkbank-clan/CLAUDE.md). CLAN's binary instead empties the output (a context-machinery artifact). |
+| `+wN` / `-wN` | Context window (KWAL/COMBO keyword-context) | -- | Rewriter only | Inapplicable to FREQPOS (positional frequency tables, no per-match context to surround). The rewriter maps `+wN`/`-wN` to `--context-after`/`--context-before`, but FREQPOS has no such clap field, so it errors at parse time, the correct outcome for an inapplicable flag (talkbank-clan/AGENTS.md). CLAN's binary instead empties the output (a context-machinery artifact). |
 | `+f` / `+fEXT` | Output to file | `--output-ext` (rewriter target) | Rewriter only | Phase 1.1. |
 
 ### Audit summary

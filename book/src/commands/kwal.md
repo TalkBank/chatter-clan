@@ -12,9 +12,9 @@ In `talkbank-clan`, keywords are currently matched against countable words on th
 ## Usage
 
 ```bash
-chatter clan kwal -k want file.cha
-chatter clan kwal -k want --speaker CHI file.cha
-chatter clan kwal -k want -k cookie file.cha
+chatter-clan kwal -k want file.cha
+chatter-clan kwal -k want --speaker CHI file.cha
+chatter-clan kwal -k want -k cookie file.cha
 ```
 
 ## Options (chatter-native)
@@ -70,7 +70,7 @@ chatter's coverage. Sources:
 | `+u` | Combine across files | (default) | Done | Inverse default vs CLAN. |
 | `+re` | Recurse | (default) | Done | |
 | `+pS` | Word delimiter |, | Missing | |
-| `+k` | Case-sensitive | `--case-sensitive` | Done | Landed 2026-05-23. Reads `CommonAnalysisArgs::case_sensitive`; KWAL `process_utterance` skips the `NormalizedWord` lowercasing on both keyword and word sides when set. Other commands' `+k` is still Rewriter-only; they continue to lowercase before matching. Pinned by `kwal_case_sensitive_uppercase_keyword_misses_lowercase_word` and `kwal_case_sensitive_matches_when_case_aligned`. |
+| `+k` | Case-sensitive | `--case-sensitive` | Done | Landed 2026-05-23. Reads `CommonAnalysisArgs::case_sensitive`; KWAL `process_utterance` skips the `NormalizedWord` lowercasing on both keyword and word sides when set. The flag is wired across the search/frequency family, with polarity matching each command's CLAN default; see the [flag-translation guide](../getting-started/flag-translation.md). Pinned by `kwal_case_sensitive_uppercase_keyword_misses_lowercase_word` and `kwal_case_sensitive_matches_when_case_aligned`. |
 | `+wN` / `-wN` | Context window | `--context-after N` / `--context-before N` | Done | Landed 2026-05-23. `+wN` emits N utterances *following* each match; `-wN` emits N utterances *preceding*. `KwalState` carries a `VecDeque` ring buffer of recent utterance texts (for pre-context) and a `Vec<(match_idx, remaining)>` list of matches still collecting post-context. Per-utterance flow: feed any open awaiting-after entries, detect match, snapshot ring as `pre_context`, register new awaiting-after, then update ring. `render_clan` emits pre-context lines + match body + post-context lines per match block. Distinct from KWAL's `+nS` speaker-context (separate Missing item). Pinned by `kwal_context_after_captures_post_match_lines`, `kwal_context_before_captures_pre_match_lines`, and `kwal_default_no_context_window`. |
 | `+f` / `+fEXT` | Output to file | `--output-ext` (rewriter target) | Rewriter only | Phase 1.1. |
 
@@ -94,8 +94,8 @@ shape. Until `--display-mode N` is wired in, a researcher pasting
 
 | CLAN command | Rust equivalent |
 |---|---|
-| `kwal +s"want" file.cha` | `chatter clan kwal file.cha -k want` |
-| `kwal +s"want" +t*CHI file.cha` | `chatter clan kwal file.cha -k want --speaker CHI` |
+| `kwal +s"want" file.cha` | `chatter-clan kwal file.cha -k want` |
+| `kwal +s"want" +t*CHI file.cha` | `chatter-clan kwal file.cha -k want --speaker CHI` |
 
 ## Display Modes (`+dN` / `--display-mode N`), partially landed
 

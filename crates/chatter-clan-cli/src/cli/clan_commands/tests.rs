@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{CommandFactory, Parser};
 
 use super::ClanCommands;
 use talkbank_clan::commands::corelex::CorelexConfig;
@@ -21,6 +21,86 @@ fn run_with_large_stack(test: impl FnOnce() + Send + 'static) {
 struct TestCli {
     #[command(subcommand)]
     command: ClanCommands,
+}
+
+#[test]
+fn clan_command_tree_has_no_clap_conflicts() {
+    run_with_large_stack(|| TestCli::command().debug_assert());
+}
+
+#[test]
+fn mlu_display_flags_follow_last_option() {
+    run_with_large_stack(|| {
+        for (args, expected_id_rows, expected_spreadsheet) in [
+            (
+                vec![
+                    "test-cli",
+                    "mlu",
+                    "--spreadsheet",
+                    "--id-rows",
+                    "sample.cha",
+                ],
+                true,
+                false,
+            ),
+            (
+                vec![
+                    "test-cli",
+                    "mlu",
+                    "--id-rows",
+                    "--spreadsheet",
+                    "sample.cha",
+                ],
+                false,
+                true,
+            ),
+        ] {
+            let parsed = TestCli::try_parse_from(args).expect("MLU display flags should parse");
+            let ClanCommands::Mlu {
+                id_rows,
+                spreadsheet,
+                ..
+            } = parsed.command
+            else {
+                panic!("expected MLU command");
+            };
+            assert_eq!(id_rows, expected_id_rows);
+            assert_eq!(spreadsheet, expected_spreadsheet);
+        }
+    });
+}
+
+#[test]
+fn plus_k_is_canonical_and_case_sensitive_alias_is_accepted() {
+    run_with_large_stack(|| {
+        for flag in ["--plus-k", "--case-sensitive"] {
+            let parsed = TestCli::try_parse_from(["test-cli", "chip", flag, "sample.cha"])
+                .expect("case toggle should parse");
+            let ClanCommands::Chip { common, .. } = parsed.command else {
+                panic!("expected chip command");
+            };
+            assert!(common.case_sensitive, "{flag} should select CLAN +k");
+        }
+    });
+}
+
+#[test]
+fn chip_accepts_an_exclusion_list_path() {
+    run_with_large_stack(|| {
+        let parsed = TestCli::try_parse_from([
+            "test-cli",
+            "chip",
+            "--exclusion-list",
+            "words.cut",
+            "sample.cha",
+        ])
+        .expect("CHIP exclusion list should parse");
+        let ClanCommands::Chip { exclusion_list, .. } = parsed.command else {
+            panic!("expected chip command");
+        };
+
+        assert_eq!(exclusion_list, Some(std::path::PathBuf::from("words.cut")));
+    });
 }
 
 #[test]
@@ -103,7 +183,7 @@ fn check_list_errors_allows_omitting_path() {
 // FREQPOS, FREQ), which produce means/totals/histograms with no per-match
 // emission to surround. CLAN's binary, given `+w` on these, prints empty
 // output (a side-effect of the shared context machinery, not a no-op); chatter
-// must REJECT the flag instead (talkbank-clan/CLAUDE.md: "Inapplicable flags
+// must REJECT the flag instead (talkbank-clan/AGENTS.md: "Inapplicable flags
 // must ERROR"). The rewriter still converts `+w3` / `-w2` to `--context-after`
 // / `--context-before`; with no clap consumer on these commands, clap rejects
 // it, which is the intended error.

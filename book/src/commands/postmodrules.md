@@ -24,7 +24,7 @@ non-English workarounds.
 
 ## Behavior
 
-Invoking `chatter clan postmodrules` prints an error and exits
+Invoking `chatter-clan postmodrules` prints an error and exits
 non-zero.
 
 ## See also

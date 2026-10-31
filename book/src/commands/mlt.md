@@ -12,9 +12,9 @@ See the [CLAN manual](https://talkbank.org/0info/manuals/CLAN.html#_Toc220409101
 ## Usage
 
 ```bash
-chatter clan mlt file.cha
-chatter clan mlt --speaker CHI file.cha
-chatter clan mlt --format json corpus/
+chatter-clan mlt file.cha
+chatter-clan mlt --speaker CHI file.cha
+chatter-clan mlt --format json corpus/
 ```
 
 ## Options (chatter-native)
@@ -33,8 +33,8 @@ chatter clan mlt --format json corpus/
 
 | CLAN command | Rust equivalent |
 |---|---|
-| `mlt file.cha` | `chatter clan mlt file.cha` |
-| `mlt +t*CHI file.cha` | `chatter clan mlt file.cha --speaker CHI` |
+| `mlt file.cha` | `chatter-clan mlt file.cha` |
+| `mlt +t*CHI file.cha` | `chatter-clan mlt file.cha --speaker CHI` |
 
 ## CLAN `+`-flag coverage audit
 
@@ -84,7 +84,7 @@ Missing.)
 | `+re` | Recurse subdirectories | (default for directory args) | Done | |
 | `+pS` | Add `S` to word delimiters |, | Missing | |
 | `+k` | Case-sensitive matching | `--case-sensitive` (via `CommonAnalysisArgs`) | Done (no-op per CLAN) | MLT does no word-keying; `+k` is silently accepted per CLAN's `cutt.cpp::mainusage` no-op semantic. Covered by `CommonAnalysisArgs.case_sensitive` flatten on `ClanCommands::Mlt`. |
-| `+wN` / `-wN` | Context window (KWAL/COMBO keyword-context) | -- | Rewriter only | Inapplicable to MLT (per-speaker turn/utterance totals, no per-match context to surround). The rewriter maps `+wN`/`-wN` to `--context-after`/`--context-before`, but MLT has no such clap field, so it errors at parse time, the correct outcome for an inapplicable flag (talkbank-clan/CLAUDE.md). CLAN's binary instead empties the output (a context-machinery artifact). |
+| `+wN` / `-wN` | Context window (KWAL/COMBO keyword-context) | -- | Rewriter only | Inapplicable to MLT (per-speaker turn/utterance totals, no per-match context to surround). The rewriter maps `+wN`/`-wN` to `--context-after`/`--context-before`, but MLT has no such clap field, so it errors at parse time, the correct outcome for an inapplicable flag (talkbank-clan/AGENTS.md). CLAN's binary instead empties the output (a context-machinery artifact). |
 | `+f` / `+fEXT` | Output to file | `--output-ext` (rewriter target) | Rewriter only | Phase 1.1. |
 | `+dN` | `onlydata` output-detail level |, | Missing | MLT has no local `case 'd'`; consumption is via the shared `maingetflag` path at `OSX-CLAN/src/clan/cutt.cpp:9382` with non-empty per-program body at `cutt.cpp:9478` (CLAN_SRV-only rejection of `onlydata == 1`; otherwise pure level effect). chatter has no `--display-mode` consumer for MLT. Per-MLT rewriter arm in `clan_args.rs` passes the token through. |
 

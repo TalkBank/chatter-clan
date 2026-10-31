@@ -71,8 +71,23 @@ pub fn dependent_tier_content_text(tier: &DependentTier) -> String {
         DependentTier::Par(t) => t.as_str().to_owned(),
         DependentTier::Tim(t) => tim_tier_text(t),
         DependentTier::Wor(t) => wor_tier_text(t),
-        DependentTier::UserDefined(t) => t.content.as_str().to_owned(),
-        DependentTier::Unsupported(t) => t.content.as_str().to_owned(),
+        DependentTier::UserDefined(t) => t
+            .content
+            .as_ref()
+            .map_or_else(String::new, |c| c.as_str().to_owned()),
+        DependentTier::Unsupported(t) => t
+            .content
+            .as_ref()
+            .map_or_else(String::new, |c| c.as_str().to_owned()),
+        DependentTier::UnparsedMor(t)
+        | DependentTier::UnparsedGra(t)
+        | DependentTier::UnparsedPho(t)
+        | DependentTier::UnparsedMod(t)
+        | DependentTier::UnparsedSin(t)
+        | DependentTier::UnparsedWor(t)
+        | DependentTier::UnparsedPhoaln(t)
+        | DependentTier::UnparsedXphoint(t) => t.source().to_owned(),
+        DependentTier::UnparsedText(t) => t.raw().source().to_owned(),
         DependentTier::Sin(t) => {
             let mut out = String::new();
             for (i, item) in t.items.iter().enumerate() {
@@ -111,7 +126,7 @@ pub fn dependent_tier_tokens(utterance: &Utterance, tier: &TierKind) -> Vec<Stri
         // "gra" via TierKind, matching CLAN's case-insensitive tier match).
         if dep.kind() == tier.as_str() {
             tokens.extend(
-                dependent_tier_content_text(dep)
+                dependent_tier_content_text(&dep.tier)
                     .split_whitespace()
                     .filter(|token| !token.is_empty() && *token != ".")
                     .map(str::to_owned),
@@ -238,7 +253,9 @@ fn bullet_content_text(content: &BulletContent) -> String {
         match segment {
             BulletContentSegment::Text(text) => out.push_str(&text.text),
             BulletContentSegment::Continuation => out.push_str("\n\t"),
-            BulletContentSegment::Bullet(_) | BulletContentSegment::Picture(_) => {}
+            BulletContentSegment::Bullet(_)
+            | BulletContentSegment::UnparsedBullet(_)
+            | BulletContentSegment::Picture(_) => {}
         }
     }
     out
@@ -253,16 +270,16 @@ fn count_content_scoped_errors(content: &[UtteranceContent]) -> u64 {
     for item in content {
         match item {
             UtteranceContent::AnnotatedWord(annotated) => {
-                total += count_scoped_errors(&annotated.scoped_annotations.0);
+                total += count_scoped_errors(&annotated.scoped_annotations);
             }
             UtteranceContent::ReplacedWord(replaced) => {
-                total += count_scoped_errors(&replaced.scoped_annotations.0);
+                total += count_scoped_errors(&replaced.scoped_annotations);
             }
             UtteranceContent::AnnotatedEvent(annotated) => {
-                total += count_scoped_errors(&annotated.scoped_annotations.0);
+                total += count_scoped_errors(&annotated.scoped_annotations);
             }
             UtteranceContent::AnnotatedGroup(annotated) => {
-                total += count_scoped_errors(&annotated.scoped_annotations.0);
+                total += count_scoped_errors(&annotated.scoped_annotations);
                 total += count_bracketed_scoped_errors(&annotated.inner.content.content);
             }
             UtteranceContent::PhoGroup(group) => {
@@ -275,7 +292,18 @@ fn count_content_scoped_errors(content: &[UtteranceContent]) -> u64 {
                 total += count_bracketed_scoped_errors(&quotation.content.content);
             }
             UtteranceContent::AnnotatedAction(annotated) => {
-                total += count_scoped_errors(&annotated.scoped_annotations.0);
+                total += count_scoped_errors(&annotated.scoped_annotations);
+            }
+            UtteranceContent::Group(group) => {
+                total += count_bracketed_scoped_errors(&group.content.content);
+            }
+            UtteranceContent::AnnotatedRetrace(annotated) => {
+                total += count_scoped_errors(&annotated.scoped_annotations);
+                total += count_bracketed_scoped_errors(&annotated.inner.content.content);
+            }
+            UtteranceContent::AnnotatedQuotation(annotated) => {
+                total += count_scoped_errors(&annotated.scoped_annotations);
+                total += count_bracketed_scoped_errors(&annotated.inner.content.content);
             }
             UtteranceContent::Retrace(retrace) => {
                 total += count_bracketed_scoped_errors(&retrace.content.content);
@@ -283,7 +311,8 @@ fn count_content_scoped_errors(content: &[UtteranceContent]) -> u64 {
             UtteranceContent::Word(_)
             | UtteranceContent::Event(_)
             | UtteranceContent::Pause(_)
-            | UtteranceContent::Group(_)
+            | UtteranceContent::Action(_)
+            | UtteranceContent::OrphanAnnotation(_)
             | UtteranceContent::Freecode(_)
             | UtteranceContent::Separator(_)
             | UtteranceContent::OverlapPoint(_)
@@ -306,19 +335,30 @@ fn count_bracketed_scoped_errors(items: &[BracketedItem]) -> u64 {
     for item in items {
         match item {
             BracketedItem::AnnotatedWord(annotated) => {
-                total += count_scoped_errors(&annotated.scoped_annotations.0);
+                total += count_scoped_errors(&annotated.scoped_annotations);
             }
             BracketedItem::ReplacedWord(replaced) => {
-                total += count_scoped_errors(&replaced.scoped_annotations.0);
+                total += count_scoped_errors(&replaced.scoped_annotations);
             }
             BracketedItem::AnnotatedEvent(annotated) => {
-                total += count_scoped_errors(&annotated.scoped_annotations.0);
+                total += count_scoped_errors(&annotated.scoped_annotations);
             }
             BracketedItem::AnnotatedAction(annotated) => {
-                total += count_scoped_errors(&annotated.scoped_annotations.0);
+                total += count_scoped_errors(&annotated.scoped_annotations);
             }
             BracketedItem::AnnotatedGroup(annotated) => {
-                total += count_scoped_errors(&annotated.scoped_annotations.0);
+                total += count_scoped_errors(&annotated.scoped_annotations);
+                total += count_bracketed_scoped_errors(&annotated.inner.content.content);
+            }
+            BracketedItem::Group(group) => {
+                total += count_bracketed_scoped_errors(&group.content.content);
+            }
+            BracketedItem::AnnotatedRetrace(annotated) => {
+                total += count_scoped_errors(&annotated.scoped_annotations);
+                total += count_bracketed_scoped_errors(&annotated.inner.content.content);
+            }
+            BracketedItem::AnnotatedQuotation(annotated) => {
+                total += count_scoped_errors(&annotated.scoped_annotations);
                 total += count_bracketed_scoped_errors(&annotated.inner.content.content);
             }
             BracketedItem::Retrace(retrace) => {
@@ -337,6 +377,7 @@ fn count_bracketed_scoped_errors(items: &[BracketedItem]) -> u64 {
             | BracketedItem::Event(_)
             | BracketedItem::Pause(_)
             | BracketedItem::Action(_)
+            | BracketedItem::OrphanAnnotation(_)
             | BracketedItem::OverlapPoint(_)
             | BracketedItem::Separator(_)
             | BracketedItem::InternalBullet(_)
@@ -392,10 +433,6 @@ fn wor_tier_text(tier: &talkbank_model::dependent_tier::WorTier) -> String {
             out.push(' ');
         }
         let _ = terminator.write_chat(&mut out);
-    }
-    if let Some(bullet) = &tier.bullet {
-        out.push(' ');
-        let _ = bullet.write_chat(&mut out);
     }
     out
 }

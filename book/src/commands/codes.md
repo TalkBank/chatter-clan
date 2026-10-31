@@ -17,9 +17,9 @@ used to order `$`-prefixed codes.
 ## Usage
 
 ```bash
-chatter clan codes file.cha
-chatter clan codes --speaker CHI file.cha
-chatter clan codes --format json file.cha
+chatter-clan codes file.cha
+chatter-clan codes --speaker CHI file.cha
+chatter-clan codes --format json file.cha
 ```
 
 ## Options (chatter-native)

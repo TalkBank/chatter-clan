@@ -13,8 +13,8 @@
 //!
 //! | CLAN command               | Rust equivalent                         |
 //! |----------------------------|-----------------------------------------|
-//! | `uniq file.cha`            | `chatter clan uniq file.cha`            |
-//! | `uniq -o file.cha`         | `chatter clan uniq file.cha --sort`     |
+//! | `uniq file.cha`            | `chatter-clan uniq file.cha`            |
+//! | `uniq -o file.cha`         | `chatter-clan uniq file.cha --sort`     |
 //!
 //! # Output
 //!

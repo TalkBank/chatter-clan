@@ -1,6 +1,5 @@
 use super::*;
-use talkbank_model::Span;
-use talkbank_model::{ChatFile, GemLabel, MainTier, Terminator, UtteranceContent, Word};
+use talkbank_model::{ChatFile, GemLabel, UtteranceContent};
 
 /// Build a ChatFile with interleaved headers and utterances.
 fn make_chat_file(lines: Vec<Line>) -> ChatFile {
@@ -11,24 +10,30 @@ fn make_chat_file(lines: Vec<Line>) -> ChatFile {
 fn utt_line(speaker: &str, words: &[&str]) -> Line {
     let content: Vec<UtteranceContent> = words
         .iter()
-        .map(|w| UtteranceContent::Word(Box::new(Word::simple(*w))))
+        .map(|w| UtteranceContent::Word(Box::new(crate::test_support::word(*w))))
         .collect();
-    let main = MainTier::new(speaker, content, Terminator::Period { span: Span::DUMMY });
+    let main = crate::test_support::main_tier(speaker, content);
     Line::utterance(talkbank_model::Utterance::new(main))
 }
 
 /// Build a `@Bg` header line fixture.
 fn bg_line(label: &str) -> Line {
-    Line::header(Header::BeginGem {
-        label: Some(GemLabel::new(label)),
-    })
+    Line::header(
+        talkbank_model::Location::Unlocated,
+        Header::BeginGem {
+            label: Some(GemLabel::try_new(label).expect("nonblank gem label fixture")),
+        },
+    )
 }
 
 /// Build an `@Eg` header line fixture.
 fn eg_line(label: &str) -> Line {
-    Line::header(Header::EndGem {
-        label: Some(GemLabel::new(label)),
-    })
+    Line::header(
+        talkbank_model::Location::Unlocated,
+        Header::EndGem {
+            label: Some(GemLabel::try_new(label).expect("nonblank gem label fixture")),
+        },
+    )
 }
 
 /// Utterances between matching `@Bg/@Eg` should be attributed to the gem label.

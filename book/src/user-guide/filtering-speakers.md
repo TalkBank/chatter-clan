@@ -10,8 +10,8 @@ Speaker filters restrict which speakers' utterances are analyzed. This is one of
 Analyze only specific speakers:
 
 ```bash
-chatter clan freq --speaker CHI file.cha
-chatter clan mlu --speaker CHI --speaker MOT file.cha
+chatter-clan freq --speaker CHI file.cha
+chatter-clan mlu --speaker CHI --speaker MOT file.cha
 ```
 
 CLAN equivalent: `+t*CHI`, `+t*CHI +t*MOT`
@@ -23,7 +23,7 @@ Multiple `--speaker` flags use OR logic: utterances from *any* listed speaker ar
 Remove specific speakers from analysis:
 
 ```bash
-chatter clan freq --exclude-speaker INV file.cha
+chatter-clan freq --exclude-speaker INV file.cha
 ```
 
 CLAN equivalent: `-t*INV`
@@ -40,13 +40,13 @@ Each field is either `*` (wildcard), empty (also wildcard), or a literal exact m
 
 ```bash
 # All children (role = Target_Child, at position 8)
-chatter clan freq --id-filter "*|*|*|*|*|*|*|Target_Child" file.cha
+chatter-clan freq --id-filter "*|*|*|*|*|*|*|Target_Child" file.cha
 
 # English-language speakers only
-chatter clan freq --id-filter "eng|" file.cha
+chatter-clan freq --id-filter "eng|" file.cha
 
 # A specific speaker code (position 3)
-chatter clan freq --id-filter "*|*|CHI" file.cha
+chatter-clan freq --id-filter "*|*|CHI" file.cha
 ```
 
 CLAN equivalent: `+t@ID="*|*|*|*|*|*|*|Target_Child"`.

@@ -10,7 +10,7 @@ Converts LENA (Language Environment Analysis) device output files (`.its` format
 ## Usage
 
 ```bash
-chatter clan lena2chat input.its
+chatter-clan lena2chat input.its
 ```
 
 ## Options

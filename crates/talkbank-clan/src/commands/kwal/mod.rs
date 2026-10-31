@@ -197,10 +197,7 @@ impl AnalysisCommand for KwalCommand {
             for kw in &matched {
                 *state.keyword_counts.entry(kw.to_string()).or_insert(0) += 1;
             }
-            let line_number = file_context
-                .line_map
-                .map(|lm| lm.line_of(utterance.main.span.start))
-                .unwrap_or(0);
+            let line_number = file_context.utterance_line(utterance).unwrap_or(0);
             let pre_context: Vec<String> = state.recent.iter().cloned().collect();
             let match_idx = state.matches.len();
             state.matches.push(KwalMatch {

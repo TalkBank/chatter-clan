@@ -5,8 +5,8 @@
 //!
 //! | CLAN command | Rust equivalent |
 //! |---|---|
-//! | `trim -t%mor file.cha +1` | `chatter clan trim file.cha --exclude-tier mor` |
-//! | `trim -t%* file.cha +1` | `chatter clan trim file.cha --exclude-tier '*'` |
+//! | `trim -t%mor file.cha +1` | `chatter-clan trim file.cha --exclude-tier mor` |
+//! | `trim -t%* file.cha +1` | `chatter-clan trim file.cha --exclude-tier '*'` |
 //!
 //! `talkbank-clan` implements this as AST-native dependent-tier filtering.
 
@@ -45,7 +45,7 @@ impl TransformCommand for TrimCommand {
         for line in &mut file.lines {
             if let Line::Utterance(utt) = line {
                 utt.dependent_tiers
-                    .retain(|tier| should_keep_tier(tier, &include, &exclude));
+                    .retain(|tier| should_keep_tier(&tier.tier, &include, &exclude));
             }
         }
 
@@ -117,41 +117,34 @@ fn matches_pattern(pattern: &TierPattern, kind: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use talkbank_model::{
-        BulletContent, ChatFile, CodTier, ComTier, DependentTier, Header, MainTier, MorTier,
-        Terminator, Utterance, Word,
-    };
+    use talkbank_model::{ChatFile, ComTier, DependentTier, Header, MainTier, MorTier, Utterance};
 
     fn main_tier() -> MainTier {
-        MainTier::new(
+        crate::test_support::main_tier(
             "CHI",
             vec![talkbank_model::UtteranceContent::Word(Box::new(
-                Word::simple("hello"),
+                crate::test_support::word("hello"),
             ))],
-            Terminator::Period {
-                span: talkbank_model::Span::DUMMY,
-            },
         )
     }
 
     fn sample_file() -> ChatFile {
         let utt = Utterance::new(main_tier())
             .add_dependent_tier(DependentTier::Mor(MorTier::new_mor(
+                talkbank_model::Location::Unlocated,
                 vec![],
-                talkbank_model::Terminator::Period {
-                    span: talkbank_model::Span::DUMMY,
-                },
+                crate::test_support::period(),
             )))
-            .add_dependent_tier(DependentTier::Cod(CodTier::from_text("$A")))
-            .add_dependent_tier(DependentTier::Com(ComTier {
-                content: BulletContent::from_text("note"),
-                span: talkbank_model::Span::DUMMY,
-            }));
+            .add_dependent_tier(DependentTier::Cod(crate::test_support::cod_tier("$A")))
+            .add_dependent_tier(DependentTier::Com(ComTier::from_text(
+                talkbank_model::Location::Unlocated,
+                "note",
+            )));
 
         ChatFile::new(vec![
-            Line::header(Header::Begin),
+            Line::header(talkbank_model::Location::Unlocated, Header::Begin),
             Line::utterance(utt),
-            Line::header(Header::End),
+            Line::header(talkbank_model::Location::Unlocated, Header::End),
         ])
     }
 
@@ -172,12 +165,12 @@ mod tests {
         assert!(
             !utt.dependent_tiers
                 .iter()
-                .any(|t| matches!(t, DependentTier::Mor(_)))
+                .any(|t| matches!(t.tier, DependentTier::Mor(_)))
         );
         assert!(
             utt.dependent_tiers
                 .iter()
-                .any(|t| matches!(t, DependentTier::Cod(_)))
+                .any(|t| matches!(t.tier, DependentTier::Cod(_)))
         );
     }
 
@@ -211,7 +204,7 @@ mod tests {
 
         let utt = file.lines[1].as_utterance().expect("utterance");
         assert_eq!(utt.dependent_tiers.len(), 1);
-        assert!(matches!(utt.dependent_tiers[0], DependentTier::Cod(_)));
+        assert!(matches!(utt.dependent_tiers[0].tier, DependentTier::Cod(_)));
     }
 
     #[test]
@@ -230,7 +223,7 @@ mod tests {
         assert!(
             !utt.dependent_tiers
                 .iter()
-                .any(|t| matches!(t, DependentTier::Mor(_)))
+                .any(|t| matches!(t.tier, DependentTier::Mor(_)))
         );
     }
 
